@@ -9,7 +9,8 @@ try:
 except ImportError:
     from pyfrc import wpilib
 import common
-import datalog
+import logging
+import logging.config
 import parameters
 import stopwatch
 import time
@@ -108,8 +109,6 @@ class DriveTrain(object):
         objects.
 
         """
-        if self._log:
-            self._log.close()
         self._log = None
         self._parameters = None
         self._left_controller = None
@@ -192,10 +191,13 @@ class DriveTrain(object):
 
         # Enable logging if specified
         if logging_enabled:
-            # Create a new data log object
-            self._log = datalog.DataLog("drivetrain.log")
+            # Read the logging config file
+            logging.config.fileConfig('logging.conf')
 
-            if self._log and self._log.file_opened:
+            # Create a new data log object
+            self._log = logging.getLogger('driveTrain')
+
+            if self._log:
                 self._log_enabled = True
             else:
                 self._log = None
@@ -371,13 +373,13 @@ class DriveTrain(object):
 
         if self._log_enabled:
             if self.accelerometer_enabled:
-                self._log.write_line("Accelerometer enabled\n")
+                self._log.debug("Accelerometer enabled")
             else:
-                self._log.write_line("Accelerometer disabled\n")
+                self._log.debug("Accelerometer disabled")
             if self.gyro_enabled:
-                self._log.write_line("Gyro enabled\n")
+                self._log.debug("Gyro enabled\n")
             else:
-                self._log.write_line("Gyro disabled\n")
+                self._log.debug("Gyro disabled\n")
 
         return True
 
@@ -479,11 +481,11 @@ class DriveTrain(object):
         """Log sensor and status variables."""
         if self._log:
             if self.gyro_enabled:
-                self._log.write_value("Gyro angle", self._gyro_angle, True)
+                self._log.debug("Gyro angle: " + str(self._gyro_angle))
             if self.accelerometer_enabled:
-                self._log.write_value("Acceleration", self._acceleration, True)
-                self._log.write_value("Distance traveled",
-                        self._distance_traveled, True)
+                self._log.debug("Acceleration: " + str(self._acceleration))
+                self._log.debug("Distance traveled: " +
+                                                str(self._distance_traveled))
 
     def adjust_heading(self, adjustment, speed):
         """Turns left/right to adjust robot heading.
