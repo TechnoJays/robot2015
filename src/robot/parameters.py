@@ -85,25 +85,6 @@ class Parameters(object):
             self.file_opened = False
             self._config = None
 
-    def read_values(self, section=None):
-        """ Get the configuration dictionary
-        ==DEPRECATED==
-
-        Get the configuration dictionary for a section
-
-        Return:
-            If the section is passed, return the dictionary it contains
-            else, return all sections of the configuration
-
-        """
-        if not self._config:
-            return None
-
-        if section:
-            return self._config.items(section)
-
-        return self._config._sections
-
     def get_value(self, section, parameter):
         """ Search the configuration dictionary for the parameter
 
