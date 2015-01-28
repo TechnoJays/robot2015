@@ -9,8 +9,9 @@ except ImportError:
     from pyfrc import wpilib
 import os
 import common
+import logging
+import logging.config
 import parameters
-import datalog
 
 
 class JoystickAxis(object):
@@ -60,7 +61,6 @@ class UserInterface(object):
     _controller_2_dead_band = 0.0
 
     _driver_station_lcd = None
-    _data_log = None
     _parameters_file = None
 
     _robot_state = None
@@ -83,8 +83,6 @@ class UserInterface(object):
         Dispose of the UserInterface object
 
         """
-        if self._log:
-            self._log.close()
         self._log = None
         self._parameters = None
         self._controller_1 = None
@@ -127,10 +125,13 @@ class UserInterface(object):
         self._driver_station_lcd = wpilib.DriverStationLCD.GetInstance()
 
         if logging_enabled:
-            #Create a new data log object
-            self._log = datalog.DataLog("userinterface.log")
+            # Read the logging config file
+            logging.config.fileConfig('logging.conf')
 
-            if self._log and self._log.file_opened:
+            #Create a new data log object
+            self._log = logging.getLogger('userInterface')
+
+            if self._log:
                 self._log_enabled = True
             else:
                 self._log = None
@@ -171,9 +172,9 @@ class UserInterface(object):
 
         if self._log_enabled:
             if self._parameters:
-                self._log.write_line("Robot parameters loaded successfully")
+                self._log.debug("Robot parameters loaded successfully")
             else:
-                self._log.write_line("Failed to read Robot parameters")
+                self._log.debug("Failed to read Robot parameters")
 
         if self._parameters:
             controller_1_port = param_reader.get_value(section,
@@ -357,4 +358,3 @@ class UserInterface(object):
 
             if controller == UserControllers.SCORING:
                 self._controller_2_previous_button_state[i + 1] = button_state
-
