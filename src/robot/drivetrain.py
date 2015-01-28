@@ -352,9 +352,9 @@ class DriveTrain(object):
 
         # Create motor controllers
         if left_motor_channel > 0:
-            self._left_controller = wpilib.Jaguar(left_motor_channel)
+            self._left_controller = wpilib.Talon(left_motor_channel)
         if right_motor_channel > 0:
-            self._right_controller = wpilib.Jaguar(right_motor_channel)
+            self._right_controller = wpilib.Talon(right_motor_channel)
 
         # Create RobotDrive using motor controllers
         if self._left_controller and self._right_controller:
