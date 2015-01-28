@@ -1,0 +1,3 @@
+[submodule "ext/text_utilities"]
+	path = ext/text_utilities
+	url = git@github.com:adein/text_utilities.git
