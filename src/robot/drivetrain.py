@@ -347,7 +347,7 @@ class DriveTrain(object):
         if gyro_channel > 0:
             self._gyro = wpilib.Gyro(gyro_channel)
             if self._gyro:
-                self._gyro.SetSensitivity(gyro_sensitivity)
+                self._gyro.setSensitivity(gyro_sensitivity)
                 self.gyro_enabled = True
 
         # Create motor controllers
@@ -360,16 +360,18 @@ class DriveTrain(object):
         if self._left_controller and self._right_controller:
             self._robot_drive = wpilib.RobotDrive(self._left_controller,
                     self._right_controller)
-            self._robot_drive.SetSafetyEnabled(False)
+            self._robot_drive.setSafetyEnabled(False)
             self.drivetrain_enabled = True
 
         # Invert motors if specified
         if left_motor_inverted and self._robot_drive:
-            self._robot_drive.SetInvertedMotor(wpilib.RobotDrive.kRearLeftMotor,
+            self._robot_drive.setInvertedMotor(
+                    wpilib.RobotDrive.MotorType.kRearLeft,
                     True)
         if right_motor_inverted and self._robot_drive:
-            self._robot_drive.SetInvertedMotor(
-                    wpilib.RobotDrive.kRearRightMotor, True)
+            self._robot_drive.setInvertedMotor(
+                    wpilib.RobotDrive.MotorType.kRearRight,
+                    True)
 
         if self._log_enabled:
             if self.accelerometer_enabled:
@@ -437,10 +439,10 @@ class DriveTrain(object):
         loop_time = 0.0
 
         if self.gyro_enabled:
-            self._gyro_angle = self._gyro.GetAngle()
+            self._gyro_angle = self._gyro.getAngle()
 
         if self.accelerometer_enabled:
-            self._acceleration = self._accelerometer.GetAcceleration(
+            self._acceleration = self._accelerometer.getAcceleration(
                     self._accelerometer_axis)
             if self._acceleration_timer:
                 loop_time = self._acceleration_timer.elapsed_time_in_secs()
@@ -454,7 +456,7 @@ class DriveTrain(object):
         Resets the gyro and accelerometer.  Also resets the distance traveled.
         """
         if self.gyro_enabled:
-            self._gyro.Reset()
+            self._gyro.reset()
         if self.accelerometer_enabled:
             self._acceleration_timer.start()
             self._distance_traveled = 0.0
@@ -523,7 +525,7 @@ class DriveTrain(object):
 
         # Check if we've reached the desired heading (within tolerance)
         if math.fabs(angle_remaining) < self._heading_threshold:
-            self._robot_drive.ArcadeDrive(0.0, 0.0, False)
+            self._robot_drive.arcadeDrive(0.0, 0.0, False)
             self._adjustment_in_progress = False
             return True
         else:
@@ -537,7 +539,7 @@ class DriveTrain(object):
             else:
                 turn_direction = (turn_direction * speed *
                         self._auto_near_turning_speed_ratio)
-            self._robot_drive.ArcadeDrive(0.0, turn_direction, False)
+            self._robot_drive.arcadeDrive(0.0, turn_direction, False)
 
         return False
 
@@ -573,7 +575,7 @@ class DriveTrain(object):
         # Check if we've reached the distance
         if distance_left < self._distance_threshold:
             # Stop driving
-            self._robot_drive.ArcadeDrive(0.0, 0.0, False)
+            self._robot_drive.arcadeDrive(0.0, 0.0, False)
             return True
         else:
             if distance_left > self._auto_far_distance_threshold:
@@ -585,7 +587,7 @@ class DriveTrain(object):
             else:
                 directional_multiplier = (directional_multiplier * speed *
                         self._auto_near_linear_speed_ratio)
-            self._robot_drive.ArcadeDrive(directional_multiplier, 0.0, False)
+            self._robot_drive.arcadeDrive(directional_multiplier, 0.0, False)
 
         return False
 
@@ -615,7 +617,7 @@ class DriveTrain(object):
 
         # Check if we've reached the time duration
         if time_left < self._time_threshold or time_left < 0:
-            self._robot_drive.ArcadeDrive(0.0, 0.0, False)
+            self._robot_drive.arcadeDrive(0.0, 0.0, False)
             self._movement_timer.stop()
             return True
         else:
@@ -634,7 +636,7 @@ class DriveTrain(object):
             else:
                 directional_speed = (directional_speed * speed *
                         self._auto_near_linear_speed_ratio)
-            self._robot_drive.ArcadeDrive(directional_speed, 0.0, False)
+            self._robot_drive.arcadeDrive(directional_speed, 0.0, False)
 
         return False
 
@@ -694,7 +696,7 @@ class DriveTrain(object):
         #turn = (turn - self._turn_filter_constant *
         #       (turn - self._previous_turn_speed))
 
-        self._robot_drive.ArcadeDrive(linear, turn, False)
+        self._robot_drive.arcadeDrive(linear, turn, False)
         self._previous_linear_speed = linear
         self._previous_turn_speed = turn
 
@@ -726,7 +728,7 @@ class DriveTrain(object):
             left = self._normal_linear_speed_ratio * left_stick
             right = self._normal_linear_speed_ratio * right_stick
 
-        self._robot_drive.TankDrive(left, right, False)
+        self._robot_drive.tankDrive(left, right, False)
 
     def arcade_drive(self, left_stick, right_stick, alternate):
         """Drives the robot using left and right thumbstick controls.
@@ -755,7 +757,7 @@ class DriveTrain(object):
             linear = self._normal_linear_speed_ratio * left_stick
             turn = self._normal_linear_speed_ratio * right_stick
 
-        self._robot_drive.ArcadeDrive(linear, turn, False)
+        self._robot_drive.arcadeDrive(linear, turn, False)
 
     def turn_to_heading(self, heading, speed):
         """Turns the robot left/right to face a specified heading.
@@ -786,7 +788,7 @@ class DriveTrain(object):
 
         # Check if we've reached the desired heading
         if math.fabs(angle_remaining) < self._heading_threshold:
-            self._robot_drive.ArcadeDrive(0.0, 0.0, False)
+            self._robot_drive.arcadeDrive(0.0, 0.0, False)
             return True
         else:
             if math.fabs(angle_remaining) > self._auto_far_heading_threshold:
@@ -799,7 +801,7 @@ class DriveTrain(object):
             else:
                 turn_direction = (turn_direction * speed *
                         self._auto_near_turning_speed_ratio)
-            self._robot_drive.ArcadeDrive(0.0, turn_direction, False)
+            self._robot_drive.arcadeDrive(0.0, turn_direction, False)
 
         return False
 
@@ -831,7 +833,7 @@ class DriveTrain(object):
 
         # Check if we've turned long enough
         if time_left < self._time_threshold or time_left < 0:
-            self._robot_drive.ArcadeDrive(0.0, 0.0, False)
+            self._robot_drive.arcadeDrive(0.0, 0.0, False)
             self._movement_timer.stop()
             return True
         else:
@@ -849,7 +851,7 @@ class DriveTrain(object):
             else:
                 directional_speed = (directional_speed * speed *
                         self._auto_near_turning_speed_ratio)
-            self._robot_drive.ArcadeDrive(0.0, directional_speed, False)
+            self._robot_drive.arcadeDrive(0.0, directional_speed, False)
 
         return False
 
