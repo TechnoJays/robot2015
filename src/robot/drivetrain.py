@@ -223,7 +223,7 @@ class DriveTrain(object):
         left_motor_inverted = 0
         right_motor_channel = -1
         right_motor_inverted = 0
-        accelerometer_slot = -1
+        accelerometer_port = -1
         accelerometer_range = -1
         gyro_channel = -1
         gyro_sensitivity = 0.007
@@ -251,8 +251,8 @@ class DriveTrain(object):
                                             "RIGHT_MOTOR_CHANNEL")
             right_motor_inverted = self._parameters.get_value(section,
                                             "RIGHT_MOTOR_INVERTED")
-            accelerometer_slot = self._parameters.get_value(section,
-                                            "ACCELEROMETER_SLOT")
+            accelerometer_port = self._parameters.get_value(section,
+                                            "ACCELEROMETER_PORT")
             accelerometer_range = self._parameters.get_value(section,
                                             "ACCELEROMETER_RANGE")
             self._accelerometer_axis = self._parameters.get_value(section,
@@ -335,8 +335,8 @@ class DriveTrain(object):
 
         # Check if the accelerometer is present/enabled
         self.accelerometer_enabled = False
-        if accelerometer_slot > 0 and accelerometer_range >= 0:
-            self._accelerometer = wpilib.ADXL345_I2C(accelerometer_slot,
+        if accelerometer_port > 0 and accelerometer_range >= 0:
+            self._accelerometer = wpilib.ADXL345_I2C(accelerometer_port,
                     accelerometer_range)
             if self._accelerometer:
                 self.accelerometer_enabled = True
