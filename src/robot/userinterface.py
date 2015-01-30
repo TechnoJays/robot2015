@@ -269,13 +269,13 @@ class UserInterface(object):
 
         if controller == UserControllers.DRIVER:
             if self._controller_1:
-                value = self._controller_1.GetRawAxis(axis)
+                value = self._controller_1.getRawAxis(axis)
                 if abs(value) < self._controller_1_dead_band:
                     return 0.0
                 return value
         elif controller == UserControllers.SCORING:
             if self._controller_2:
-                value = self._controller_2.GetRawAxis(axis)
+                value = self._controller_2.getRawAxis(axis)
                 if abs(value) < self._controller_2_dead_band:
                     return 0.0
                 return value
@@ -294,12 +294,12 @@ class UserInterface(object):
         """
         if controller == UserControllers.DRIVER:
             if self._controller_1:
-                return self._controller_1.GetRawButton(button)
+                return self._controller_1.getRawButton(button)
             else:
                 return 0
         elif controller == UserControllers.SCORING:
             if self._controller_2:
-                return self._controller_2.GetRawButton(button)
+                return self._controller_2.getRawButton(button)
             else:
                 return 0
         return 0
