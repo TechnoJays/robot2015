@@ -164,16 +164,14 @@ class UserInterface(object):
 
         # Read the parameters file
         param_reader = parameters.Parameters(self._parameters_file)
-        if param_reader:
-            self._parameters = param_reader.read_values(section)
 
         if self._log_enabled:
-            if self._parameters:
+            if param_reader is not None:
                 self._log.debug("Robot parameters loaded successfully")
             else:
                 self._log.debug("Failed to read Robot parameters")
 
-        if self._parameters:
+        if param_reader is not None:
             controller_1_port = param_reader.get_value(section,
                                                        "CONTROLLER_1_PORT")
             controller_2_port = param_reader.get_value(section,
