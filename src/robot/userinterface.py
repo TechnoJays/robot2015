@@ -9,8 +9,9 @@ except ImportError:
     from pyfrc import wpilib
 import os
 import common
+import logging
+import logging.config
 import parameters
-import datalog
 
 
 class JoystickAxis(object):
@@ -59,8 +60,6 @@ class UserInterface(object):
     _controller_2_previous_button_state = 0
     _controller_2_dead_band = 0.0
 
-    _driver_station_lcd = None
-    _data_log = None
     _parameters_file = None
 
     _robot_state = None
@@ -83,8 +82,6 @@ class UserInterface(object):
         Dispose of the UserInterface object
 
         """
-        if self._log:
-            self._log.close()
         self._log = None
         self._parameters = None
         self._controller_1 = None
@@ -124,13 +121,14 @@ class UserInterface(object):
         self._robot_state = common.ProgramState.DISABLED
         self._parameters_file = None
 
-        self._driver_station_lcd = wpilib.DriverStationLCD.GetInstance()
-
         if logging_enabled:
-            #Create a new data log object
-            self._log = datalog.DataLog("userinterface.log")
+            # Read the logging config file
+            logging.config.fileConfig('logging.conf')
 
-            if self._log and self._log.file_opened:
+            #Create a new data log object
+            self._log = logging.getLogger('userInterface')
+
+            if self._log:
                 self._log_enabled = True
             else:
                 self._log = None
@@ -166,16 +164,14 @@ class UserInterface(object):
 
         # Read the parameters file
         param_reader = parameters.Parameters(self._parameters_file)
-        if param_reader:
-            self._parameters = param_reader.read_values(section)
 
         if self._log_enabled:
-            if self._parameters:
-                self._log.write_line("Robot parameters loaded successfully")
+            if param_reader is not None:
+                self._log.debug("Robot parameters loaded successfully")
             else:
-                self._log.write_line("Failed to read Robot parameters")
+                self._log.debug("Failed to read Robot parameters")
 
-        if self._parameters:
+        if param_reader is not None:
             controller_1_port = param_reader.get_value(section,
                                                        "CONTROLLER_1_PORT")
             controller_2_port = param_reader.get_value(section,
@@ -273,13 +269,13 @@ class UserInterface(object):
 
         if controller == UserControllers.DRIVER:
             if self._controller_1:
-                value = self._controller_1.GetRawAxis(axis)
+                value = self._controller_1.getRawAxis(axis)
                 if abs(value) < self._controller_1_dead_band:
                     return 0.0
                 return value
         elif controller == UserControllers.SCORING:
             if self._controller_2:
-                value = self._controller_2.GetRawAxis(axis)
+                value = self._controller_2.getRawAxis(axis)
                 if abs(value) < self._controller_2_dead_band:
                     return 0.0
                 return value
@@ -298,37 +294,15 @@ class UserInterface(object):
         """
         if controller == UserControllers.DRIVER:
             if self._controller_1:
-                return self._controller_1.GetRawButton(button)
+                return self._controller_1.getRawButton(button)
             else:
                 return 0
         elif controller == UserControllers.SCORING:
             if self._controller_2:
-                return self._controller_2.GetRawButton(button)
+                return self._controller_2.getRawButton(button)
             else:
                 return 0
         return 0
-
-    def output_user_message(self, message, clear):
-        """Displays a message on the User Messages Window of the Driver Station.
-
-        Args:
-            message: The text to display.
-            clear: True if the screen should be cleared first.
-
-        """
-        if not self._driver_station_lcd:
-            return
-
-        self._display_line = (self._display_line + 1) % 6
-
-        # Clear the screen if specified
-        if clear or self._display_line == 0:
-            self._display_line = 0
-            self._driver_station_lcd.Clear()
-
-        # Display the message
-        self._driver_station_lcd.PrintLine(self._display_line, message)
-        self._driver_station_lcd.UpdateLCD()
 
     def store_button_states(self, controller):
         """Store the current button states for the specified controller.
@@ -357,4 +331,3 @@ class UserInterface(object):
 
             if controller == UserControllers.SCORING:
                 self._controller_2_previous_button_state[i + 1] = button_state
-
