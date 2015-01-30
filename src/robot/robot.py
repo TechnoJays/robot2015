@@ -17,14 +17,10 @@ import sys
 import userinterface
 
 
-class MyRobot(wpilib.SimpleRobot):
+class MyRobot(wpilib.IterativeRobot):
     """Controls the robot.
 
     This is the main robot class that controls the robot during all 3 modes.
-    There is 1 method for each mode: Disabled, Autonomous, and OperatorControl
-    (teleop).  The methods are called once from the main control loop each time
-    the robot enters the states.
-
     """
     # Public member variables
 
@@ -42,6 +38,105 @@ class MyRobot(wpilib.SimpleRobot):
     _parameters_file = None
     _driver_alternate = False
     _driver_controls_swap_ratio = 1.0
+
+
+    def robotInit(self):
+        """Performs robot-wide initialization.
+
+        Called upon robot power-on.
+
+        """
+        self._initialize("/py/par/robot.par", True)
+
+    def disabledInit(self):
+        """Prepares the robot for Disabled mode.
+
+        Called only when first disabled.
+
+        """
+        self._set_robot_state(common.ProgramState.DISABLED)
+
+        # Read sensors
+        self._read_sensors()
+
+        self.GetWatchdog().SetEnabled(False)
+
+    def autonomousInit(self):
+        """Prepares the robot for Autonomous mode.
+
+        Called each and every time autonomous is entered from another mode.
+
+        """
+        # Perform initialization before looping
+
+        # Read sensors
+        self._read_sensors()
+
+        self._set_robot_state(common.ProgramState.AUTONOMOUS)
+        self.GetWatchdog().SetEnabled(False)
+
+    def teleopInit(self):
+        """Prepares the robot for Teleop mode.
+
+        Called each and every time teleop is entered from another mode.
+
+        """
+        # Perform initialization before looping
+
+        self._set_robot_state(common.ProgramState.TELEOP)
+
+        # Enable the watchdog
+        dog = self.GetWatchdog()
+        dog.SetEnabled(True)
+        dog.SetExpiration(1.0)
+
+    def testInit(self):
+        """Prepares the robot for Test mode.
+
+        Called each and every time test mode is entered from another mode.
+
+        """
+        pass
+
+    def disabledPeriodic(self):
+        """Called iteratively during disabled mode.
+
+        The period is synced to the driver station control packets,
+        giving a periodic frequency of about 50Hz (50 times per second).
+
+        """
+
+    def autonomousPeriodic(self):
+        """Called iteratively during autonomous mode.
+
+        The period is synced to the driver station control packets,
+        giving a periodic frequency of about 50Hz (50 times per second).
+
+        """
+
+    def teleopPeriodic(self):
+        """Called iteratively during teleop mode.
+
+        The period is synced to the driver station control packets,
+        giving a periodic frequency of about 50Hz (50 times per second).
+
+        """
+
+    def testPeriodic(self):
+        """Called iteratively during test mode.
+
+        The period is synced to the driver station control packets,
+        giving a periodic frequency of about 50Hz (50 times per second).
+
+        """
+
+
+
+
+
+
+
+
 
     def _initialize(self, params, logging_enabled):
         """Initialize the robot.
@@ -115,22 +210,6 @@ class MyRobot(wpilib.SimpleRobot):
 
         return True
 
-    def RobotInit(self):
-        """Performs robot-wide initialization.
-
-        Called each time the robot enters the Disabled mode.
-
-        """
-        self._initialize("/py/par/robot.par", True)
-
-    def _disabled_init(self):
-        """Prepares the robot for Disabled mode."""
-        self._set_robot_state(common.ProgramState.DISABLED)
-
-        # Read sensors
-        self._read_sensors()
-
-        self.GetWatchdog().SetEnabled(False)
 
     def Disabled(self):
         """Control the robot during Disabled mode.
@@ -153,15 +232,7 @@ class MyRobot(wpilib.SimpleRobot):
 
             wpilib.Wait(0.01)
 
-    def _autonomous_init(self):
-        """Prepares the robot for Autonomous mode."""
-        # Perform initialization before looping
 
-        # Read sensors
-        self._read_sensors()
-
-        self._set_robot_state(common.ProgramState.AUTONOMOUS)
-        self.GetWatchdog().SetEnabled(False)
 
     def Autonomous(self):
         """Controls the robot during Autonomous mode.
@@ -180,16 +251,6 @@ class MyRobot(wpilib.SimpleRobot):
 
             wpilib.Wait(0.01)
 
-    def _operator_control_init(self):
-        """Prepares the robot for Teleop mode."""
-        # Perform initialization before looping
-
-        self._set_robot_state(common.ProgramState.TELEOP)
-
-        # Enable the watchdog
-        dog = self.GetWatchdog()
-        dog.SetEnabled(True)
-        dog.SetExpiration(1.0)
 
     def OperatorControl(self):
         """Controls the robot during Teleop/OperatorControl mode.
@@ -276,7 +337,5 @@ class MyRobot(wpilib.SimpleRobot):
             self._drive_train.arcade_drive(0.0, 0.0, False)
 
 
-def run():
-    """Create the robot and start it."""
-    robot = MyRobot()
-    robot.StartCompetition()
+if __name__ == "__main__":
+    wpilib.run(MyRobot)
