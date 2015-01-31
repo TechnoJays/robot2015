@@ -61,8 +61,6 @@ class MyRobot(wpilib.IterativeRobot):
         # Read sensors
         self._read_sensors()
 
-        self.GetWatchdog().SetEnabled(False)
-
     def autonomousInit(self):
         """Prepares the robot for Autonomous mode.
 
@@ -73,7 +71,6 @@ class MyRobot(wpilib.IterativeRobot):
         self._read_sensors()
 
         self._set_robot_state(common.ProgramState.AUTONOMOUS)
-        self.GetWatchdog().SetEnabled(False)
 
     def teleopInit(self):
         """Prepares the robot for Teleop mode.
@@ -82,11 +79,6 @@ class MyRobot(wpilib.IterativeRobot):
 
         """
         self._set_robot_state(common.ProgramState.TELEOP)
-
-        # Enable the watchdog
-        dog = self.GetWatchdog()
-        dog.SetEnabled(True)
-        dog.SetExpiration(1.0)
 
     def testInit(self):
         """Prepares the robot for Test mode.
@@ -131,9 +123,6 @@ class MyRobot(wpilib.IterativeRobot):
         giving a periodic frequency of about 50Hz (50 times per second).
 
         """
-        # Feed the watchdog timer
-        self.GetWatchdog().Feed()
-
         # Read sensors
         self._read_sensors()
 
