@@ -125,7 +125,7 @@ class UserInterface(object):
             #Create a new data log object
             self._log = logging.getLogger('userinterface')
             self._log.setLevel(logging.DEBUG)
-            fh = logging.FileHandler('userinterface.log')
+            fh = logging.FileHandler('/home/lvuser/py/userinterface.log')
             fh.setLevel(logging.DEBUG)
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             fh.setFormatter(formatter)
