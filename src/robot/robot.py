@@ -11,6 +11,7 @@ except ImportError:
 import common
 import drivetrain
 import logging
+import logging.config
 import math
 import parameters
 import sys
@@ -27,7 +28,6 @@ class MyRobot(wpilib.IterativeRobot):
     # Private member objects
     _drive_train = None
     _log = None
-    _logger = None
     _parameters = None
     _user_interface = None
 
@@ -164,16 +164,6 @@ class MyRobot(wpilib.IterativeRobot):
             logging_enabled: True if logging should be enabled.
 
         """
-        self._logger = logging.getLogger(__name__)
-        handler = None
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s:'
-                                      '%(name)s:%(message)s')
-        handler = logging.StreamHandler(stream=sys.stdout)
-        handler.setLevel(logging.INFO)
-        handler.setFormatter(formatter)
-        self._logger.addHandler(handler)
-        self._logger.setLevel(logging.INFO)
-
         # Initialize public member variables
 
         # Initialize private member objects
@@ -189,6 +179,17 @@ class MyRobot(wpilib.IterativeRobot):
         self._parameters_file = None
         self._driver_alternate = False
         self._driver_controls_swap_ratio = 1.0
+
+        # Enable logging if specified
+        if logging_enabled:
+            # Read the logging config file
+            logging.config.fileConfig('logging.conf')
+            # Create a new data log object
+            self._log = logging.getLogger('robot')
+            if self._log:
+                self._log_enabled = True
+            else:
+                self._log = None
 
         # Read parameters file
         self._parameters_file = params
