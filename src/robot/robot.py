@@ -67,10 +67,10 @@ class MyRobot(wpilib.IterativeRobot):
         Called each and every time autonomous is entered from another mode.
 
         """
+        self._set_robot_state(common.ProgramState.AUTONOMOUS)
+
         # Read sensors
         self._read_sensors()
-
-        self._set_robot_state(common.ProgramState.AUTONOMOUS)
 
     def teleopInit(self):
         """Prepares the robot for Teleop mode.
@@ -79,6 +79,9 @@ class MyRobot(wpilib.IterativeRobot):
 
         """
         self._set_robot_state(common.ProgramState.TELEOP)
+
+        # Read sensors
+        self._read_sensors()
 
     def testInit(self):
         """Prepares the robot for Test mode.
@@ -102,8 +105,6 @@ class MyRobot(wpilib.IterativeRobot):
         # Read sensors
         self._read_sensors()
 
-        wpilib.Wait(0.01)
-
     def autonomousPeriodic(self):
         """Called iteratively during autonomous mode.
 
@@ -113,8 +114,6 @@ class MyRobot(wpilib.IterativeRobot):
         """
         # Read sensors
         self._read_sensors()
-
-        wpilib.Wait(0.01)
 
     def teleopPeriodic(self):
         """Called iteratively during teleop mode.
@@ -143,8 +142,6 @@ class MyRobot(wpilib.IterativeRobot):
             self._user_interface.store_button_states(
                     userinterface.UserControllers.SCORING)
 
-        wpilib.Wait(0.01)
-
     def testPeriodic(self):
         """Called iteratively during test mode.
 
@@ -152,7 +149,7 @@ class MyRobot(wpilib.IterativeRobot):
         giving a periodic frequency of about 50Hz (50 times per second).
 
         """
-        wpilib.Wait(0.01)
+        pass
 
     # Custom methods used by the methods above
     def _initialize(self, params, logging_enabled):
@@ -262,19 +259,19 @@ class MyRobot(wpilib.IterativeRobot):
 
     def _control_drive_train(self):
         """Manually control the drive train."""
-        driver_left_y = self._user_interface.get_axis_value(
-                userinterface.UserControllers.DRIVER,
-                userinterface.JoystickAxis.LEFTY)
-        driver_right_x = self._user_interface.get_axis_value(
-                userinterface.UserControllers.DRIVER,
-                userinterface.JoystickAxis.RIGHTX)
-        if driver_left_y != 0.0 or driver_right_x != 0.0:
-            if self._drive_train:
+        if self._drive_train:
+            driver_left_y = self._user_interface.get_axis_value(
+                    userinterface.UserControllers.DRIVER,
+                    userinterface.JoystickAxis.LEFTY)
+            driver_right_x = self._user_interface.get_axis_value(
+                    userinterface.UserControllers.DRIVER,
+                    userinterface.JoystickAxis.RIGHTX)
+            if driver_left_y != 0.0 or driver_right_x != 0.0:
                 driver_left_y = driver_left_y * self._driver_controls_swap_ratio
                 self._drive_train.arcade_drive(driver_left_y, driver_right_x,
                                                False)
-        else:
-            self._drive_train.arcade_drive(0.0, 0.0, False)
+            else:
+                self._drive_train.arcade_drive(0.0, 0.0, False)
 
 
 if __name__ == "__main__":
