@@ -48,7 +48,7 @@ class MyRobot(wpilib.IterativeRobot):
         Called upon robot power-on.
 
         """
-        self._initialize("/py/par/robot.par", True)
+        self._initialize("robot.par", True)
 
     def disabledInit(self):
         """Prepares the robot for Disabled mode.
@@ -200,10 +200,10 @@ class MyRobot(wpilib.IterativeRobot):
         self._load_parameters()
 
         # Create robot objects
-        self._drive_train = drivetrain.DriveTrain("/py/par/drivetrain.par",
+        self._drive_train = drivetrain.DriveTrain("drivetrain.par",
                                                   self._log_enabled)
         self._user_interface = userinterface.UserInterface(
-                                                    "/py/par/userinterface.par",
+                                                    "userinterface.par",
                                                     self._log_enabled)
 
     def _load_parameters(self):
