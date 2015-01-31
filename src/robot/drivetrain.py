@@ -194,7 +194,7 @@ class DriveTrain(object):
             # Create a new data log object
             self._log = logging.getLogger('drivetrain')
             self._log.setLevel(logging.DEBUG)
-            fh = logging.FileHandler('drivetrain.log')
+            fh = logging.FileHandler('/home/lvuser/py/drivetrain.log')
             fh.setLevel(logging.DEBUG)
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             fh.setFormatter(formatter)

@@ -185,7 +185,7 @@ class MyRobot(wpilib.IterativeRobot):
             # Create a new data log object
             self._log = logging.getLogger('robot')
             self._log.setLevel(logging.DEBUG)
-            fh = logging.FileHandler('robot.log')
+            fh = logging.FileHandler('/home/lvuser/py/robot.log')
             fh.setLevel(logging.DEBUG)
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             fh.setFormatter(formatter)
