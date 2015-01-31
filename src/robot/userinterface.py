@@ -122,11 +122,14 @@ class UserInterface(object):
         self._parameters_file = None
 
         if logging_enabled:
-            # Read the logging config file
-            logging.config.fileConfig('logging.conf')
-
             #Create a new data log object
-            self._log = logging.getLogger('userInterface')
+            self._log = logging.getLogger('userinterface')
+            self._log.setLevel(logging.DEBUG)
+            fh = logging.FileHandler('userinterface.log')
+            fh.setLevel(logging.DEBUG)
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            fh.setFormatter(formatter)
+            self._log.addHandler(fh)
 
             if self._log:
                 self._log_enabled = True
