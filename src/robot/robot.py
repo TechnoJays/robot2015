@@ -40,6 +40,8 @@ class MyRobot(wpilib.IterativeRobot):
     _driver_controls_swap_ratio = 1.0
 
 
+    # Iterative robot methods that we override.
+    # These get called by the main control loop in the IterativeRobot class.
     def robotInit(self):
         """Performs robot-wide initialization.
 
@@ -67,8 +69,6 @@ class MyRobot(wpilib.IterativeRobot):
         Called each and every time autonomous is entered from another mode.
 
         """
-        # Perform initialization before looping
-
         # Read sensors
         self._read_sensors()
 
@@ -81,8 +81,6 @@ class MyRobot(wpilib.IterativeRobot):
         Called each and every time teleop is entered from another mode.
 
         """
-        # Perform initialization before looping
-
         self._set_robot_state(common.ProgramState.TELEOP)
 
         # Enable the watchdog
@@ -105,6 +103,14 @@ class MyRobot(wpilib.IterativeRobot):
         giving a periodic frequency of about 50Hz (50 times per second).
 
         """
+        # Set all motors to be stopped (prevent motor safety errors)
+        if self._drive_train:
+            self._drive_train.drive(0.0, 0.0, False)
+
+        # Read sensors
+        self._read_sensors()
+
+        wpilib.Wait(0.01)
 
     def autonomousPeriodic(self):
         """Called iteratively during autonomous mode.
@@ -113,6 +119,10 @@ class MyRobot(wpilib.IterativeRobot):
         giving a periodic frequency of about 50Hz (50 times per second).
 
         """
+        # Read sensors
+        self._read_sensors()
+
+        wpilib.Wait(0.01)
 
     def teleopPeriodic(self):
         """Called iteratively during teleop mode.
@@ -121,6 +131,30 @@ class MyRobot(wpilib.IterativeRobot):
         giving a periodic frequency of about 50Hz (50 times per second).
 
         """
+        # Feed the watchdog timer
+        self.GetWatchdog().Feed()
+
+        # Read sensors
+        self._read_sensors()
+
+        # Perform user controlled actions
+        if self._user_interface:
+            # Check for alternate speed mode request
+            self._check_alternate_speed_modes()
+
+            # Check swap drivetrain direction request
+            self._check_swap_drivetrain_request()
+
+            # Manually control the robot
+            self._control_drive_train()
+
+            # Update/store the UI button state
+            self._user_interface.store_button_states(
+                    userinterface.UserControllers.DRIVER)
+            self._user_interface.store_button_states(
+                    userinterface.UserControllers.SCORING)
+
+        wpilib.Wait(0.01)
 
     def testPeriodic(self):
         """Called iteratively during test mode.
@@ -129,15 +163,9 @@ class MyRobot(wpilib.IterativeRobot):
         giving a periodic frequency of about 50Hz (50 times per second).
 
         """
+        wpilib.Wait(0.01)
 
-
-
-
-
-
-
-
-
+    # Custom methods used by the methods above
     def _initialize(self, params, logging_enabled):
         """Initialize the robot.
 
@@ -178,7 +206,7 @@ class MyRobot(wpilib.IterativeRobot):
 
         # Read parameters file
         self._parameters_file = params
-        self.load_parameters()
+        self._load_parameters()
 
         # Create robot objects
         self._drive_train = drivetrain.DriveTrain("/py/par/drivetrain.par",
@@ -187,7 +215,7 @@ class MyRobot(wpilib.IterativeRobot):
                                                     "/py/par/userinterface.par",
                                                     self._log_enabled)
 
-    def load_parameters(self):
+    def _load_parameters(self):
         """Load values from a parameter file and create and initialize objects.
 
         Read parameter values from the specified file, instantiate required
@@ -209,83 +237,6 @@ class MyRobot(wpilib.IterativeRobot):
             pass
 
         return True
-
-
-    def Disabled(self):
-        """Control the robot during Disabled mode.
-
-        Monitors the user input for a restart request.  This is
-        useful during development to load new Python code and
-        avoid rebooting the robot.
-
-        """
-        self._disabled_init()
-
-        # Repeat this loop as long as we're in Disabled
-        while self.IsDisabled():
-            # Set all motors to be stopped (prevent motor safety errors)
-            if self._drive_train:
-                self._drive_train.drive(0.0, 0.0, False)
-
-            # Read sensors
-            self._read_sensors()
-
-            wpilib.Wait(0.01)
-
-
-
-    def Autonomous(self):
-        """Controls the robot during Autonomous mode.
-
-        Instantiate a Class using default values.
-
-        """
-        # Autonomous initialization
-        self._autonomous_init()
-
-        # Repeat this loop as long as we're in Autonomous
-        while self.IsAutonomous() and self.IsEnabled():
-
-            # Read sensors
-            self._read_sensors()
-
-            wpilib.Wait(0.01)
-
-
-    def OperatorControl(self):
-        """Controls the robot during Teleop/OperatorControl mode.
-
-        Instantiate a Class using default values.
-
-        """
-        self._operator_control_init()
-        dog = self.GetWatchdog()
-        # Repeat this loop as long as we're in Teleop
-        while self.IsOperatorControl() and self.IsEnabled():
-            # Feed the watchdog timer
-            dog.Feed()
-
-            # Read sensors
-            self._read_sensors()
-
-            # Perform user controlled actions
-            if self._user_interface:
-                # Check for alternate speed mode request
-                self._check_alternate_speed_modes()
-
-                # Check swap drivetrain direction request
-                self._check_swap_drivetrain_request()
-
-                # Manually control the robot
-                self._control_drive_train()
-
-                # Update/store the UI button state
-                self._user_interface.store_button_states(
-                        userinterface.UserControllers.DRIVER)
-                self._user_interface.store_button_states(
-                        userinterface.UserControllers.SCORING)
-
-            wpilib.Wait(0.01)
 
     def _read_sensors(self):
         """Have the objects read their sensors."""
