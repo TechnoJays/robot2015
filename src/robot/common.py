@@ -23,6 +23,11 @@ class Direction(object):
     BACKWARD = 4
     UP = 5
     DOWN = 6
+    STOP = 7
+    IN = 8
+    OUT = 9
+    CLOCKWISE = 10
+    COUNTERCLOCKWISE = 11
 
 
 class ProgramState(object):
