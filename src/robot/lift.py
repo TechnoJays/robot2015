@@ -10,6 +10,7 @@ except ImportError:
 import common
 import logging
 import logging.config
+import math
 import parameters
 import stopwatch
 
@@ -203,9 +204,9 @@ class Lift(object):
                                             "UP_DIRECTION")
             self._down_direction = self._parameters.get_value(section,
                                             "DOWN_DIRECTION")
-            self._normal_up_speed_ratio = self._parameters.get_value(section,
+            self._up_speed_ratio = self._parameters.get_value(section,
                                                 "UP_SPEED_RATIO")
-            self._normal_down_speed_ratio = self._parameters.get_value(section,
+            self._down_speed_ratio = self._parameters.get_value(section,
                                                 "DOWN_SPEED_RATIO")
             self._auto_far_speed_ratio = self._parameters.get_value(
                                             section,
@@ -316,4 +317,177 @@ class Lift(object):
         if self._movement_timer:
             self._movement_timer.stop()
             self._movement_timer.start()
+
+    def get_current_state(self):
+        """Return a string containing sensor and status variables.
+
+        Returns:
+            A string with the encoder value.
+        """
+        return 'Encoder: %(enc)3.0f' % {'enc':self._encoder_count}
+
+    def log_current_state(self):
+        """Log sensor and status variables."""
+        if self._log:
+            if self.encoder_enabled:
+                self._log.debug("Encoder: " + str(self._encoder_count))
+
+    def set_lift_position(self, position, speed):
+        """Sets the lift to a specified position.
+
+        Args:
+            position: The desired position in encoder counts.
+            speed: The motor speed ratio.
+
+        Returns:
+            True when the desired position is reached.
+
+        """
+        # Abort if we don't have the encoder or motors
+        if not self.encoder_enabled or not self.lift_enabled:
+            return True
+
+        movement_direction = 0.0
+
+        # Check the encoder position against the boundaries (if enabled)
+        # Check max boundary
+        if (not self._ignore_encoder_limits and self._encoder_max_limit > 0 and
+            position > self._encoder_count and
+            self._encoder_count > self._encoder_max_limit):
+            self._lift_controller.Set(0, 0)
+            return True
+        # Check min boundary
+        if (not self._ignore_encoder_limits and position < self._encoder_count
+            and self._encoder_count < self._encoder_min_limit):
+            self._lift_controller.Set(0, 0)
+            return True
+
+        # Check to see if we've reached the correct position
+        if math.fabs(position - self._encoder_count) <= self._encoder_threshold:
+            self._lift_controller.Set(0, 0)
+            return True
+
+        # Continue moving
+        if (position - self._encoder_count) < 0:
+            direction = (self._down_direction * self._down_speed_ratio)
+        else:
+            direction = (self._up_direction * self._up_speed_ratio)
+
+        if (math.fabs(position - self._encoder_count) >
+            self._auto_far_encoder_threshold):
+            movement_direction = (direction * speed *
+                                  self._auto_far_speed_ratio)
+        elif (math.fabs(position - self._encoder_count) >
+            self._auto_medium_encoder_threshold):
+            movement_direction = (direction * speed *
+                                  self._auto_medium_speed_ratio)
+        else:
+            movement_direction = (direction  * speed *
+                                  self._auto_near_speed_ratio)
+
+        self._lift_controller.Set(movement_direction, 0)
+        return False
+
+    def lift_time(self, time, direction, speed):
+        """Moves the lift for a certain time and speed.
+
+        Args:
+            time: the time to move the lift.
+            direction: the common.Direction enum in which to move.
+            speed: the motor speed ratio.
+
+        Returns:
+            True when finished.
+
+        """
+        # Abort if we don't have the timer or motors
+        if not self._timer or not self.lift_enabled:
+            return True
+
+        # Get the timer value since we started moving
+        elapsed_time = self._movement_timer.elapsed_time_in_secs()
+
+        # Calculate time left to move
+        time_left = time - elapsed_time
+
+        # Check the encoder position against the boundaries (if enabled)
+        if self.encoder_enabled:
+            # Check max boundary
+            if (not self._ignore_encoder_limits and self._encoder_max_limit > 0
+                and direction == common.Direction.UP and
+                self._encoder_count > self._encoder_max_limit):
+                self._lift_controller.Set(0, 0)
+                return True
+            # Check min boundary
+            if (not self._ignore_encoder_limits and self._encoder_min_limit > 0
+                and direction == common.Direction.DOWN and
+                self._encoder_count < self._encoder_min_limit):
+                self._lift_controller.Set(0, 0)
+                return True
+
+        # Check if we've reached the time duration
+        if time_left < self._time_threshold or time_left < 0:
+            self._lift_controller.Set(0, 0)
+            self._movement_timer.stop()
+            return True
+        directional_speed = 0
+        if direction == common.Direction.DOWN:
+            directional_speed = (self._down_direction * self._down_speed_ratio)
+        else:
+            directional_speed = (self._up_direction * self._up_speed_ratio)
+
+        if time_left > self._auto_far_time_threshold:
+            directional_speed = (directional_speed * speed *
+                    self._auto_far_speed_ratio)
+        elif time_left > self._auto_medium_time_threshold:
+            directional_speed = (directional_speed * speed *
+                    self._auto_medium_speed_ratio)
+        else:
+            directional_speed = (directional_speed * speed *
+                    self._auto_near_speed_ratio)
+
+        self._lift_controller.Set(directional_speed, 0)
+        return False
+
+    def move_lift(self, directional_speed):
+        """Moves the lift at a specified speed and direction.
+
+        Args:
+            directional_speed: the speed and direction for moving.
+
+        """
+        # Abort if the lift is not available
+        if not self.lift_enabled:
+            return
+
+        # Check the encoder position against the boundaries (if enabled)
+        if self.encoder_enabled:
+            # Check max boundary
+            if (not self._ignore_encoder_limits and self._encoder_max_limit > 0
+                and self._up_direction * directional_speed > 0 and
+                self._encoder_count > self._encoder_max_limit):
+                self._lift_controller.Set(0, 0)
+                return True
+            # Check min boundary
+            if (not self._ignore_encoder_limits and self._encoder_min_limit > 0
+                and self._down_direction * directional_speed > 0 and
+                self._encoder_count < self._encoder_min_limit):
+                self._lift_controller.Set(0, 0)
+                return True
+
+        if self._up_direction * directional_speed > 0:
+            directional_speed = directional_speed * self._up_speed_ratio
+        else:
+            directional_speed = directional_speed * self._down_speed_ratio
+
+        self._lift_controller.Set(directional_speed, 0)
+
+    def ignore_encoder_limits(self, state):
+        """Notify lift to ignore encoder limits.
+
+        Args:
+            state: True if limits should be ignored.
+
+        """
+        self._ignore_encoder_limits = state
 
