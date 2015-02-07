@@ -88,7 +88,8 @@ class DriveTrain(object):
     _previous_turn_speed = 0
     _adjustment_in_progress = False
 
-    def __init__(self, params="drivetrain.par", logging_enabled=False):
+    def __init__(self, params="/home/lvuser/par/drivetrain.par",
+                 logging_enabled=False):
         """Create and initialize a DriveTrain.
 
         Instantiate a DriveTrain and specify a parameters file and whether
@@ -194,7 +195,7 @@ class DriveTrain(object):
             # Create a new data log object
             self._log = logging.getLogger('drivetrain')
             self._log.setLevel(logging.DEBUG)
-            fh = logging.FileHandler('/home/lvuser/py/drivetrain.log')
+            fh = logging.FileHandler('/home/lvuser/log/drivetrain.log')
             fh.setLevel(logging.DEBUG)
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             fh.setFormatter(formatter)

@@ -48,7 +48,7 @@ class MyRobot(wpilib.IterativeRobot):
         Called upon robot power-on.
 
         """
-        self._initialize("robot.par", True)
+        self._initialize("/home/lvuser/par/robot.par", True)
 
     def disabledInit(self):
         """Prepares the robot for Disabled mode.
@@ -185,7 +185,7 @@ class MyRobot(wpilib.IterativeRobot):
             # Create a new data log object
             self._log = logging.getLogger('robot')
             self._log.setLevel(logging.DEBUG)
-            fh = logging.FileHandler('/home/lvuser/py/robot.log')
+            fh = logging.FileHandler('/home/lvuser/log/robot.log')
             fh.setLevel(logging.DEBUG)
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             fh.setFormatter(formatter)
@@ -200,11 +200,12 @@ class MyRobot(wpilib.IterativeRobot):
         self._load_parameters()
 
         # Create robot objects
-        self._drive_train = drivetrain.DriveTrain("drivetrain.par",
-                                                  self._log_enabled)
+        self._drive_train = drivetrain.DriveTrain(
+                                    "/home/lvuser/par/drivetrain.par",
+                                    self._log_enabled)
         self._user_interface = userinterface.UserInterface(
-                                                    "userinterface.par",
-                                                    self._log_enabled)
+                                    "/home/lvuser/par/userinterface.par",
+                                    self._log_enabled)
 
     def _load_parameters(self):
         """Load values from a parameter file and create and initialize objects.
