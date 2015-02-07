@@ -47,34 +47,34 @@ class DriveTrain(object):
     _movement_timer = None
 
     # Private parameters
-    _normal_linear_speed_ratio = 0
-    _alternate_linear_speed_ratio = 0
-    _normal_turning_speed_ratio = 0
-    _alternate_turning_speed_ratio = 0
-    _auto_far_linear_speed_ratio = 0
-    _auto_medium_linear_speed_ratio = 0
-    _auto_near_linear_speed_ratio = 0
-    _auto_far_turning_speed_ratio = 0
-    _auto_medium_turning_speed_ratio = 0
-    _auto_near_turning_speed_ratio = 0
-    _forward_direction = 0
-    _backward_direction = 0
-    _left_direction = 0
-    _right_direction = 0
-    _linear_filter_constant = 0
-    _turn_filter_constant = 0
-    _maximum_linear_speed_change = 0
-    _maximum_turn_speed_change = 0
-    _time_threshold = 0
-    _auto_medium_time_threshold = 0
-    _auto_far_time_threshold = 0
-    _distance_threshold = 0
-    _auto_medium_distance_threshold = 0
-    _auto_far_distance_threshold = 0
-    _heading_threshold = 0
-    _auto_medium_heading_threshold = 0
-    _auto_far_heading_threshold = 0
-    _accelerometer_axis = 0
+    _normal_linear_speed_ratio = -1
+    _alternate_linear_speed_ratio = -1
+    _normal_turning_speed_ratio = -1
+    _alternate_turning_speed_ratio = -1
+    _auto_far_linear_speed_ratio = -1
+    _auto_medium_linear_speed_ratio = -1
+    _auto_near_linear_speed_ratio = -1
+    _auto_far_turning_speed_ratio = -1
+    _auto_medium_turning_speed_ratio = -1
+    _auto_near_turning_speed_ratio = -1
+    _forward_direction = -1
+    _backward_direction = -1
+    _left_direction = -1
+    _right_direction = -1
+    _linear_filter_constant = -1
+    _turn_filter_constant = -1
+    _maximum_linear_speed_change = -1
+    _maximum_turn_speed_change = -1
+    _time_threshold = -1
+    _auto_medium_time_threshold = -1
+    _auto_far_time_threshold = -1
+    _distance_threshold = -1
+    _auto_medium_distance_threshold = -1
+    _auto_far_distance_threshold = -1
+    _heading_threshold = -1
+    _auto_medium_heading_threshold = -1
+    _auto_far_heading_threshold = -1
+    _accelerometer_axis = -1
 
     # Private member variables
     _log_enabled = False
@@ -338,7 +338,7 @@ class DriveTrain(object):
 
         # Check if the accelerometer is present/enabled
         self.accelerometer_enabled = False
-        if accelerometer_port > 0 and accelerometer_range >= 0:
+        if accelerometer_port >= 0 and accelerometer_range >= 0:
             self._accelerometer = wpilib.ADXL345_I2C(accelerometer_port,
                     accelerometer_range)
             if self._accelerometer:
@@ -347,16 +347,16 @@ class DriveTrain(object):
 
         # Check if gyro is present/enabled
         self.gyro_enabled = False
-        if gyro_channel > 0:
+        if gyro_channel >= 0:
             self._gyro = wpilib.Gyro(gyro_channel)
             if self._gyro:
                 self._gyro.setSensitivity(gyro_sensitivity)
                 self.gyro_enabled = True
 
         # Create motor controllers
-        if left_motor_channel > 0:
+        if left_motor_channel >= 0:
             self._left_controller = wpilib.Talon(left_motor_channel)
-        if right_motor_channel > 0:
+        if right_motor_channel >= 0:
             self._right_controller = wpilib.Talon(right_motor_channel)
 
         # Create RobotDrive using motor controllers
