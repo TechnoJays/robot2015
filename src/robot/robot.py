@@ -188,7 +188,8 @@ class MyRobot(wpilib.IterativeRobot):
         self._drive_train = drivetrain.DriveTrain(
                                     "/home/lvuser/par/drivetrain.par",
                                     self._log_enabled)
-        self._feeder = feeder.Feeder(None, self._log_enabled)
+        self._feeder = feeder.Feeder("/home/lvuser/par/feeder.par",
+                                     self._log_enabled)
         self._lift = lift.Lift("/home/lvuser/par/lift.par", self._log_enabled)
         self._user_interface = userinterface.UserInterface(
                                     "/home/lvuser/par/userinterface.par",
@@ -243,6 +244,10 @@ class MyRobot(wpilib.IterativeRobot):
             scoring_left_y = self._user_interface.get_axis_value(
                     userinterface.UserControllers.SCORING,
                     userinterface.JoystickAxis.LEFTY)
+            scoring_dpad_y = self._user_interface.get_axis_value(
+                    userinterface.UserControllers.SCORING,
+                    userinterface.JoystickAxis.DPADY)
+
             if scoring_left_y != 0.0:
                 direction = common.Direction.STOP
                 if scoring_left_y > 0:
@@ -252,6 +257,16 @@ class MyRobot(wpilib.IterativeRobot):
                 self._feeder.feed(direction, math.fabs(scoring_left_y))
             else:
                 self._feeder.feed(common.Direction.STOP, 0.0)
+
+            if scoring_dpad_y != 0.0:
+                direction = common.Direction.STOP
+                if scoring_dpad_y > 0:
+                    direction = common.Direction.OPEN
+                else:
+                    direction = common.Direction.CLOSE
+                self._feeder.move_arms(direction, math.fabs(scoring_dpad_y))
+            else:
+                self._feeder.move_arms(common.Direction.STOP, 0.0)
 
     def _control_lift(self):
         """Manually control the lift."""
