@@ -2,11 +2,7 @@
 
 
 # Imports
-# If wpilib not available use pyfrc
-try:
-    import wpilib
-except ImportError:
-    from pyfrc import wpilib
+import wpilib
 import os
 import common
 import logging
@@ -128,7 +124,8 @@ class UserInterface(object):
             self._log.setLevel(logging.DEBUG)
             fh = logging.FileHandler('/home/lvuser/log/userinterface.log')
             fh.setLevel(logging.DEBUG)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter(
+                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             fh.setFormatter(formatter)
             self._log.addHandler(fh)
 

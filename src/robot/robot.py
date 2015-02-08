@@ -1,20 +1,11 @@
 """This module contains the FRC robot class."""
 
 # Imports
-
-# If wpilib not available use pyfrc
-try:
-    import wpilib
-except ImportError:
-    from pyfrc import wpilib
-
+import wpilib
 import common
 import drivetrain
 import logging
 import logging.config
-import math
-import parameters
-import sys
 import userinterface
 
 
@@ -187,7 +178,8 @@ class MyRobot(wpilib.IterativeRobot):
             self._log.setLevel(logging.DEBUG)
             fh = logging.FileHandler('/home/lvuser/log/robot.log')
             fh.setLevel(logging.DEBUG)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter(
+                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             fh.setFormatter(formatter)
             self._log.addHandler(fh)
             if self._log:
@@ -217,16 +209,6 @@ class MyRobot(wpilib.IterativeRobot):
             True if the parameter file was processed successfully.
 
         """
-        # Close and delete old objects
-        self._parameters = None
-
-        # Read the parameters file
-        self._parameters = parameters.Parameters(self._parameters_file)
-        section = __name__.lower()
-
-        # Read parameters from the file
-        if self._parameters:
-            pass
 
         return True
 
@@ -274,10 +256,10 @@ class MyRobot(wpilib.IterativeRobot):
                     userinterface.JoystickAxis.RIGHTX)
             if driver_left_y != 0.0 or driver_right_x != 0.0:
                 driver_left_y = driver_left_y * self._driver_controls_swap_ratio
-                self._drive_train.arcade_drive(driver_left_y, driver_right_x,
+                self._drive_train.drive(driver_left_y, driver_right_x,
                                                False)
             else:
-                self._drive_train.arcade_drive(0.0, 0.0, False)
+                self._drive_train.drive(0.0, 0.0, False)
 
 
 if __name__ == "__main__":
