@@ -1,12 +1,7 @@
 """This module provides a (fork)lift class."""
 
 # Imports
-
-# If wpilib not available use pyfrc
-try:
-    import wpilib
-except ImportError:
-    from pyfrc import wpilib
+import wpilib
 import common
 import logging
 import logging.config
@@ -141,7 +136,8 @@ class Lift(object):
             self._log.setLevel(logging.DEBUG)
             fh = logging.FileHandler('/home/lvuser/log/lift.log')
             fh.setLevel(logging.DEBUG)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter(
+                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             fh.setFormatter(formatter)
             self._log.addHandler(fh)
 
@@ -401,7 +397,7 @@ class Lift(object):
 
         """
         # Abort if we don't have the timer or motors
-        if not self._timer or not self.lift_enabled:
+        if not self._movement_timer or not self.lift_enabled:
             return True
 
         # Get the timer value since we started moving
