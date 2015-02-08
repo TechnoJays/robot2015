@@ -2,8 +2,11 @@
 
 # Imports
 import wpilib
+import autoscript
 import common
 import drivetrain
+import feeder
+import lift
 import logging
 import logging.config
 import userinterface
