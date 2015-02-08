@@ -1,18 +1,12 @@
 """This module describes a feeder arm."""
 
 # Imports
-# If wpilib not available use pyfrc
-try:
-    import wpilib
-except ImportError:
-    from pyfrc import wpilib
+import wpilib
 import common
 import logging
 import logging.config
-import math
 import parameters
 import stopwatch
-import time
 
 
 class FeederArm(object):
@@ -112,7 +106,8 @@ class FeederArm(object):
             self._log.setLevel(logging.DEBUG)
             fh = logging.FileHandler('/home/lvuser/log/feederarm.log')
             fh.setLevel(logging.DEBUG)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter(
+                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             fh.setFormatter(formatter)
             self._log.addHandler(fh)
 
@@ -248,17 +243,17 @@ class FeederArm(object):
             speed: The speed of the wheel.
 
         """
-        if direction == Direction.CLOCKWISE:
+        if direction == common.Direction.CLOCKWISE:
             if self.arm_enabled:
                 self._wheel_controller.Set((self._clockwise_direction * speed *
                     self._clockwise_speed_ratio), 0)
-        elif direction == Direction.COUNTERCLOCKWISE:
+        elif direction == common.Direction.COUNTERCLOCKWISE:
             if self.arm_enabled:
                 self._wheel_controller.Set((self._counter_clockwise_direction *
                     speed * self._counter_clockwise_speed_ratio), 0)
-        elif direction == Direction.STOP:
+        elif direction == common.Direction.STOP:
             if self.arm_enabled:
-                self.wheel_controller.Set(0.0, 0)
+                self._wheel_controller.Set(0.0, 0)
 
     def spin_time(self, time, direction, speed):
         """Controls the wheel on the end of the arm for a time duration.
@@ -290,11 +285,11 @@ class FeederArm(object):
             self._movement_timer.stop()
             return True
         else:
-            if direction == Direction.CLOCKWISE:
+            if direction == common.Direction.CLOCKWISE:
                 if self.arm_enabled:
                     self._wheel_controller.Set((self._clockwise_direction *
                         speed * self._clockwise_speed_ratio), 0)
-            elif direction == Direction.COUNTERCLOCKWISE:
+            elif direction == common.Direction.COUNTERCLOCKWISE:
                 if self.arm_enabled:
                     self._wheel_controller.Set(
                             (self._counter_clockwise_direction *

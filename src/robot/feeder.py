@@ -1,16 +1,10 @@
 """This module provides a feeder class."""
 
 # Imports
-# If wpilib not available use pyfrc
-try:
-    import wpilib
-except ImportError:
-    from pyfrc import wpilib
 import common
 import feeder_arm
 import logging
 import logging.config
-import parameters
 
 
 class Feeder(object):
@@ -106,7 +100,8 @@ class Feeder(object):
             self._log.setLevel(logging.DEBUG)
             fh = logging.FileHandler('/home/lvuser/log/feeder.log')
             fh.setLevel(logging.DEBUG)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter(
+                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             fh.setFormatter(formatter)
             self._log.addHandler(fh)
 
@@ -214,15 +209,15 @@ class Feeder(object):
 
         """
         if self.feeder_enabled:
-            if direction == Direction.IN:
-                self._right_arm.spin(Direction.COUNTERCLOCKWISE, speed)
-                self._left_arm.spin(Direction.CLOCKWISE, speed)
-            elif direction == Direction.OUT:
-                self._right_arm.spin(Direction.CLOCKWISE, speed)
-                self._left_arm.spin(Direction.COUNTERCLOCKWISE, speed)
-            elif direction == Direction.STOP:
-                self._right_arm.spin(Direction.STOP, 0)
-                self._left_arm.spin(Direction.STOP, 0)
+            if direction == common.Direction.IN:
+                self._right_arm.spin(common.Direction.COUNTERCLOCKWISE, speed)
+                self._left_arm.spin(common.Direction.CLOCKWISE, speed)
+            elif direction == common.Direction.OUT:
+                self._right_arm.spin(common.Direction.CLOCKWISE, speed)
+                self._left_arm.spin(common.Direction.COUNTERCLOCKWISE, speed)
+            elif direction == common.Direction.STOP:
+                self._right_arm.spin(common.Direction.STOP, 0)
+                self._left_arm.spin(common.Direction.STOP, 0)
 
     def feed_time(self, time, direction, speed):
         """Controls the feeder arms for a time duration.

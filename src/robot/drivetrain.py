@@ -3,17 +3,12 @@
 # Imports
 import math
 
-# If wpilib not available use pyfrc
-try:
-    import wpilib
-except ImportError:
-    from pyfrc import wpilib
+import wpilib
 import common
 import logging
 import logging.config
 import parameters
 import stopwatch
-import time
 
 
 class DriveTrain(object):
@@ -74,7 +69,6 @@ class DriveTrain(object):
     _heading_threshold = -1
     _auto_medium_heading_threshold = -1
     _auto_far_heading_threshold = -1
-    _accelerometer_axis = -1
 
     # Private member variables
     _log_enabled = False
@@ -172,7 +166,6 @@ class DriveTrain(object):
         self._backward_direction = -1.0
         self._left_direction = -1.0
         self._right_direction = 1.0
-        self._accelerometer_axis = 0
         self._maximum_linear_speed_change = 0.0
         self._maximum_turn_speed_change = 0.0
         self._linear_filter_constant = 0.0
@@ -197,7 +190,8 @@ class DriveTrain(object):
             self._log.setLevel(logging.DEBUG)
             fh = logging.FileHandler('/home/lvuser/log/drivetrain.log')
             fh.setLevel(logging.DEBUG)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter(
+                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             fh.setFormatter(formatter)
             self._log.addHandler(fh)
 
@@ -227,7 +221,6 @@ class DriveTrain(object):
         left_motor_inverted = 0
         right_motor_channel = -1
         right_motor_inverted = 0
-        accelerometer_port = -1
         accelerometer_range = -1
         gyro_channel = -1
         gyro_sensitivity = 0.007
@@ -255,12 +248,8 @@ class DriveTrain(object):
                                             "RIGHT_MOTOR_CHANNEL")
             right_motor_inverted = self._parameters.get_value(section,
                                             "RIGHT_MOTOR_INVERTED")
-            accelerometer_port = self._parameters.get_value(section,
-                                            "ACCELEROMETER_PORT")
             accelerometer_range = self._parameters.get_value(section,
                                             "ACCELEROMETER_RANGE")
-            self._accelerometer_axis = self._parameters.get_value(section,
-                                            "ACCELEROMETER_AXIS")
             gyro_channel = self._parameters.get_value(section,
                                             "GYRO_CHANNEL")
             gyro_sensitivity = self._parameters.get_value(section,
@@ -339,9 +328,9 @@ class DriveTrain(object):
 
         # Check if the accelerometer is present/enabled
         self.accelerometer_enabled = False
-        if accelerometer_port >= 0 and accelerometer_range >= 0:
-            self._accelerometer = wpilib.ADXL345_I2C(accelerometer_port,
-                    accelerometer_range)
+        if accelerometer_range >= 0:
+            self._accelerometer = wpilib.BuiltInAccelerometer(
+                                                        accelerometer_range)
             if self._accelerometer:
                 self.accelerometer_enabled = True
                 self._acceleration_timer = stopwatch.Stopwatch()
@@ -446,8 +435,7 @@ class DriveTrain(object):
             self._gyro_angle = self._gyro.getAngle()
 
         if self.accelerometer_enabled:
-            self._acceleration = self._accelerometer.getAcceleration(
-                    self._accelerometer_axis)
+            self._acceleration = self._accelerometer.getY()
             if self._acceleration_timer:
                 loop_time = self._acceleration_timer.elapsed_time_in_secs()
                 self._acceleration_timer.start()
@@ -733,35 +721,6 @@ class DriveTrain(object):
             right = self._normal_linear_speed_ratio * right_stick
 
         self._robot_drive.tankDrive(left, right, False)
-
-    def arcade_drive(self, left_stick, right_stick, alternate):
-        """Drives the robot using left and right thumbstick controls.
-
-        This is an alternate method used during manual/teleop driving mode,
-        where the left thumbstick controls the forward and backward movement
-        and the right thumbstick controls turning.
-
-        Args:
-            left_stick: the 'y' position of the left thumbstick
-            right_stick: the 'x' position of the right thumbstick
-            alternate: True if the robot should move at 'alternate' speed.
-        """
-        #TODO: Duplicate of drive()?
-        # Abort if the robot drive is not available
-        if not self._robot_drive:
-            return
-
-        # Determine the actual speed using the normal/alternate speed ratios
-        linear = 0.0
-        turn = 0.0
-        if alternate:
-            linear = self._alternate_linear_speed_ratio * left_stick
-            turn = self._alternate_linear_speed_ratio * right_stick
-        else:
-            linear = self._normal_linear_speed_ratio * left_stick
-            turn = self._normal_linear_speed_ratio * right_stick
-
-        self._robot_drive.arcadeDrive(linear, turn, False)
 
     def turn_to_heading(self, heading, speed):
         """Turns the robot left/right to face a specified heading.
