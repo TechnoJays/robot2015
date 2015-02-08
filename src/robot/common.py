@@ -28,6 +28,8 @@ class Direction(object):
     OUT = 9
     CLOCKWISE = 10
     COUNTERCLOCKWISE = 11
+    OPEN = 12
+    CLOSE = 13
 
 
 class ProgramState(object):
