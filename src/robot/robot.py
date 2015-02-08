@@ -9,6 +9,7 @@ import feeder
 import lift
 import logging
 import logging.config
+import math
 import userinterface
 
 
@@ -21,17 +22,14 @@ class MyRobot(wpilib.IterativeRobot):
 
     # Private member objects
     _drive_train = None
+    _feeder = None
+    _lift = None
     _log = None
-    _parameters = None
     _user_interface = None
-
-    # Private parameters
 
     # Private member variables
     _log_enabled = False
-    _parameters_file = None
     _driver_alternate = False
-    _driver_controls_swap_ratio = 1.0
 
 
     # Iterative robot methods that we override.
@@ -124,11 +122,10 @@ class MyRobot(wpilib.IterativeRobot):
             # Check for alternate speed mode request
             self._check_alternate_speed_modes()
 
-            # Check swap drivetrain direction request
-            self._check_swap_drivetrain_request()
-
             # Manually control the robot
             self._control_drive_train()
+            self._control_feeder()
+            self._control_lift()
 
             # Update/store the UI button state
             self._user_interface.store_button_states(
@@ -162,17 +159,14 @@ class MyRobot(wpilib.IterativeRobot):
 
         # Initialize private member objects
         self._drive_train = None
+        self._feeder = None
+        self._lift = None
         self._log = None
-        self._parameters = None
         self._user_interface = None
-
-        # Initialize private parameters
 
         # Initialize private member variables
         self._log_enabled = False
-        self._parameters_file = None
         self._driver_alternate = False
-        self._driver_controls_swap_ratio = 1.0
 
         # Enable logging if specified
         if logging_enabled:
@@ -190,40 +184,33 @@ class MyRobot(wpilib.IterativeRobot):
             else:
                 self._log = None
 
-        # Read parameters file
-        self._parameters_file = params
-        self._load_parameters()
-
         # Create robot objects
         self._drive_train = drivetrain.DriveTrain(
                                     "/home/lvuser/par/drivetrain.par",
                                     self._log_enabled)
+        self._feeder = feeder.Feeder(None, self._log_enabled)
+        self._lift = lift.Lift("/home/lvuser/par/lift.par", self._log_enabled)
         self._user_interface = userinterface.UserInterface(
                                     "/home/lvuser/par/userinterface.par",
                                     self._log_enabled)
-
-    def _load_parameters(self):
-        """Load values from a parameter file and create and initialize objects.
-
-        Read parameter values from the specified file, instantiate required
-        objects, and update status variables.
-
-        Returns:
-            True if the parameter file was processed successfully.
-
-        """
-
-        return True
 
     def _read_sensors(self):
         """Have the objects read their sensors."""
         if self._drive_train:
             self._drive_train.read_sensors()
+        if self._feeder:
+            self._feeder.read_sensors()
+        if self._lift:
+            self._lift.read_sensors()
 
     def _set_robot_state(self, state):
         """Notify objects of the current mode."""
         if self._drive_train:
             self._drive_train.set_robot_state(state)
+        if self._feeder:
+            self._feeder.set_robot_state(state)
+        if self._lift:
+            self._lift.set_robot_state(state)
         if self._user_interface:
             self._user_interface.set_robot_state(state)
 
@@ -236,18 +223,6 @@ class MyRobot(wpilib.IterativeRobot):
         else:
             self._driver_alternate = False
 
-    def _check_swap_drivetrain_request(self):
-        """Check if the driver wants to swap forward and reverse."""
-        if (self._user_interface.get_button_state(
-                        userinterface.UserControllers.DRIVER,
-                        userinterface.JoystickButtons.RIGHTTRIGGER) == 1 and
-            self._user_interface.button_state_changed(
-                        userinterface.UserControllers.DRIVER,
-                        userinterface.JoystickButtons.RIGHTTRIGGER)):
-            # Swap the driver controls to be the opposite of what they were
-            self._driver_controls_swap_ratio = (self._driver_controls_swap_ratio
-                                                * -1.0)
-
     def _control_drive_train(self):
         """Manually control the drive train."""
         if self._drive_train:
@@ -258,12 +233,36 @@ class MyRobot(wpilib.IterativeRobot):
                     userinterface.UserControllers.DRIVER,
                     userinterface.JoystickAxis.RIGHTX)
             if driver_left_y != 0.0 or driver_right_x != 0.0:
-                driver_left_y = driver_left_y * self._driver_controls_swap_ratio
-                self._drive_train.drive(driver_left_y, driver_right_x,
-                                               False)
+                self._drive_train.drive(driver_left_y, driver_right_x, False)
             else:
                 self._drive_train.drive(0.0, 0.0, False)
 
+    def _control_feeder(self):
+        """Manually control the feeder."""
+        if self._feeder:
+            scoring_left_y = self._user_interface.get_axis_value(
+                    userinterface.UserControllers.SCORING,
+                    userinterface.JoystickAxis.LEFTY)
+            if scoring_left_y != 0.0:
+                direction = common.Direction.STOP
+                if scoring_left_y > 0:
+                    direction = common.Direction.IN
+                else:
+                    direction = common.Direction.OUT
+                self._feeder.feed(direction, math.fabs(scoring_left_y))
+            else:
+                self._feeder.feed(common.Direction.STOP, 0.0)
+
+    def _control_lift(self):
+        """Manually control the lift."""
+        if self._lift:
+            scoring_right_y = self._user_interface.get_axis_value(
+                    userinterface.UserControllers.SCORING,
+                    userinterface.JoystickAxis.RIGHTY)
+            if scoring_right_y != 0.0:
+                self._lift.move_lift(scoring_right_y)
+            else:
+                self._lift.move_lift(0.0)
 
 if __name__ == "__main__":
     wpilib.run(MyRobot)
