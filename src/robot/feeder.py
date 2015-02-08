@@ -308,8 +308,8 @@ class Feeder(object):
             right_direction = common.Direction.STOP
             left_direction = common.Direction.STOP
 
-        right_finished = self._right_arm.spin_time(time, direction, speed)
-        left_finished = self._left_arm.spin_time(time, direction, speed)
+        right_finished = self._right_arm.spin_time(time, right_direction, speed)
+        left_finished = self._left_arm.spin_time(time, left_direction, speed)
 
         if right_finished and left_finished:
             return True

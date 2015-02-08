@@ -2,7 +2,7 @@
 
 # Imports
 import wpilib
-import autoscript
+#import autoscript
 import common
 import drivetrain
 import feeder
