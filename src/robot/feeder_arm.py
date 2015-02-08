@@ -245,15 +245,15 @@ class FeederArm(object):
         """
         if direction == common.Direction.CLOCKWISE:
             if self.arm_enabled:
-                self._wheel_controller.Set((self._clockwise_direction * speed *
+                self._wheel_controller.set((self._clockwise_direction * speed *
                     self._clockwise_speed_ratio), 0)
         elif direction == common.Direction.COUNTERCLOCKWISE:
             if self.arm_enabled:
-                self._wheel_controller.Set((self._counter_clockwise_direction *
+                self._wheel_controller.set((self._counter_clockwise_direction *
                     speed * self._counter_clockwise_speed_ratio), 0)
         elif direction == common.Direction.STOP:
             if self.arm_enabled:
-                self._wheel_controller.Set(0.0, 0)
+                self._wheel_controller.set(0.0, 0)
 
     def spin_time(self, time, direction, speed):
         """Controls the wheel on the end of the arm for a time duration.
@@ -281,17 +281,17 @@ class FeederArm(object):
         # Check if we've spun long enough
         if time_left < self._time_threshold or time_left < 0:
             if self.arm_enabled:
-                self._wheel_controller.Set(0.0, 0)
+                self._wheel_controller.set(0.0, 0)
             self._movement_timer.stop()
             return True
         else:
             if direction == common.Direction.CLOCKWISE:
                 if self.arm_enabled:
-                    self._wheel_controller.Set((self._clockwise_direction *
+                    self._wheel_controller.set((self._clockwise_direction *
                         speed * self._clockwise_speed_ratio), 0)
             elif direction == common.Direction.COUNTERCLOCKWISE:
                 if self.arm_enabled:
-                    self._wheel_controller.Set(
+                    self._wheel_controller.set(
                             (self._counter_clockwise_direction *
                              speed * self._counter_clockwise_speed_ratio), 0)
 

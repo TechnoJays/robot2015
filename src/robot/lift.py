@@ -164,9 +164,7 @@ class Lift(object):
         """
         # Define and initialize local variables
         lift_motor_channel = -1
-        encoder_a_slot = -1
         encoder_a_channel = -1
-        encoder_b_slot = -1
         encoder_b_channel = -1
         encoder_reverse = 0
         encoder_type = 2
@@ -182,12 +180,8 @@ class Lift(object):
 
         # Store parameters from the file to local variables
         if self._parameters:
-            encoder_a_slot = self._parameters.get_value(section,
-                                                "ENCODER_A_SLOT")
             encoder_a_channel = self._parameters.get_value(section,
                                                 "ENCODER_A_CHANNEL")
-            encoder_b_slot = self._parameters.get_value(section,
-                                                "ENCODER_B_SLOT")
             encoder_b_channel = self._parameters.get_value(section,
                                                 "ENCODER_B_CHANNEL")
             encoder_reverse = self._parameters.get_value(section,
@@ -233,17 +227,15 @@ class Lift(object):
                                             section,
                                             "AUTO_FAR_ENCODER_THRESHOLD")
 
-        # Create the encoder object if the channel is greater than 0
+        # Create the encoder object if the channel is valid
         self.encoder_enabled = False
-        if (encoder_a_slot >= 0 and encoder_a_channel >= 0 and
-            encoder_b_slot >= 0 and encoder_b_channel >= 0):
+        if (encoder_a_channel >= 0 and encoder_b_channel >= 0):
             self._encoder = wpilib.Encoder(encoder_a_channel,
                                            encoder_b_channel,
                                            encoder_reverse,
                                            encoder_type)
             if self._encoder:
                 self.encoder_enabled = True
-                self._encoder.Start()
 
         # Create motor controller
         if lift_motor_channel >= 0:
@@ -300,13 +292,13 @@ class Lift(object):
     def read_sensors(self):
         """Read and store current sensor values."""
         if self.encoder_enabled:
-            self._encoder_count = self._encoder.Get()
+            self._encoder_count = self._encoder.get()
 
     def reset_sensors(self):
         """Reset sensor values."""
         if self.encoder_enabled:
-            self._encoder.Reset()
-            self._encoder_count = self._encoder.Get()
+            self._encoder.reset()
+            self._encoder_count = self._encoder.get()
 
     def reset_and_start_timer(self):
         """Resets and restarts the timer for time based movement."""
@@ -350,17 +342,17 @@ class Lift(object):
         if (not self._ignore_encoder_limits and self._encoder_max_limit > 0 and
             position > self._encoder_count and
             self._encoder_count > self._encoder_max_limit):
-            self._lift_controller.Set(0, 0)
+            self._lift_controller.set(0, 0)
             return True
         # Check min boundary
         if (not self._ignore_encoder_limits and position < self._encoder_count
             and self._encoder_count < self._encoder_min_limit):
-            self._lift_controller.Set(0, 0)
+            self._lift_controller.set(0, 0)
             return True
 
         # Check to see if we've reached the correct position
         if math.fabs(position - self._encoder_count) <= self._encoder_threshold:
-            self._lift_controller.Set(0, 0)
+            self._lift_controller.set(0, 0)
             return True
 
         # Continue moving
@@ -381,7 +373,7 @@ class Lift(object):
             movement_direction = (direction  * speed *
                                   self._auto_near_speed_ratio)
 
-        self._lift_controller.Set(movement_direction, 0)
+        self._lift_controller.set(movement_direction, 0)
         return False
 
     def lift_time(self, time, direction, speed):
@@ -412,18 +404,18 @@ class Lift(object):
             if (not self._ignore_encoder_limits and self._encoder_max_limit > 0
                 and direction == common.Direction.UP and
                 self._encoder_count > self._encoder_max_limit):
-                self._lift_controller.Set(0, 0)
+                self._lift_controller.set(0, 0)
                 return True
             # Check min boundary
             if (not self._ignore_encoder_limits and self._encoder_min_limit > 0
                 and direction == common.Direction.DOWN and
                 self._encoder_count < self._encoder_min_limit):
-                self._lift_controller.Set(0, 0)
+                self._lift_controller.set(0, 0)
                 return True
 
         # Check if we've reached the time duration
         if time_left < self._time_threshold or time_left < 0:
-            self._lift_controller.Set(0, 0)
+            self._lift_controller.set(0, 0)
             self._movement_timer.stop()
             return True
         directional_speed = 0
@@ -442,7 +434,7 @@ class Lift(object):
             directional_speed = (directional_speed * speed *
                     self._auto_near_speed_ratio)
 
-        self._lift_controller.Set(directional_speed, 0)
+        self._lift_controller.set(directional_speed, 0)
         return False
 
     def move_lift(self, directional_speed):
@@ -462,13 +454,13 @@ class Lift(object):
             if (not self._ignore_encoder_limits and self._encoder_max_limit > 0
                 and self._up_direction * directional_speed > 0 and
                 self._encoder_count > self._encoder_max_limit):
-                self._lift_controller.Set(0, 0)
+                self._lift_controller.set(0, 0)
                 return True
             # Check min boundary
             if (not self._ignore_encoder_limits and self._encoder_min_limit > 0
                 and self._down_direction * directional_speed > 0 and
                 self._encoder_count < self._encoder_min_limit):
-                self._lift_controller.Set(0, 0)
+                self._lift_controller.set(0, 0)
                 return True
 
         if self._up_direction * directional_speed > 0:
@@ -476,7 +468,7 @@ class Lift(object):
         else:
             directional_speed = directional_speed * self._down_speed_ratio
 
-        self._lift_controller.Set(directional_speed, 0)
+        self._lift_controller.set(directional_speed, 0)
 
     def ignore_encoder_limits(self, state):
         """Notify lift to ignore encoder limits.
