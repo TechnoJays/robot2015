@@ -2,7 +2,6 @@
 
 # Imports
 import math
-
 import wpilib
 import common
 import logging

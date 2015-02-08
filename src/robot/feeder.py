@@ -296,6 +296,18 @@ class Feeder(object):
         if not self.feeder_enabled:
             return True
 
+        left_direction = None
+        right_direction = None
+        if direction == common.Direction.IN:
+            right_direction = common.Direction.COUNTERCLOCKWISE
+            left_direction = common.Direction.CLOCKWISE
+        elif direction == common.Direction.OUT:
+            right_direction = common.Direction.CLOCKWISE
+            left_direction = common.Direction.COUNTERCLOCKWISE
+        elif direction == common.Direction.STOP:
+            right_direction = common.Direction.STOP
+            left_direction = common.Direction.STOP
+
         right_finished = self._right_arm.spin_time(time, direction, speed)
         left_finished = self._left_arm.spin_time(time, direction, speed)
 
