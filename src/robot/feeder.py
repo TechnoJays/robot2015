@@ -1,10 +1,13 @@
 """This module provides a feeder class."""
 
 # Imports
+import wpilib
 import common
 import feeder_arm
 import logging
 import logging.config
+import parameters
+import stopwatch
 
 
 class Feeder(object):
@@ -23,14 +26,22 @@ class Feeder(object):
     feeder_enabled = False
     left_arm_enabled = False
     right_arm_enabled = False
+    arms_control_enabled = False
 
     # Private member objects
     _log = None
     _parameters = None
     _left_arm = None
     _right_arm = None
+    _arms_controller = None
+    _movement_timer = None
 
     # Private parameters
+    _time_threshold = 0
+    _open_direction = None
+    _close_direction = None
+    _open_speed_ratio = None
+    _close_speed_ratio = None
 
     # Private member variables
     _log_enabled = False
@@ -62,6 +73,8 @@ class Feeder(object):
         self._parameters = None
         self._left_arm = None
         self._right_arm = None
+        self._arms_controller = None
+        self._movement_timer = None
 
     def _initialize(self, params, logging_enabled):
         """Initialize and configure a Feeder object.
@@ -79,14 +92,22 @@ class Feeder(object):
         self.feeder_enabled = False
         self.left_arm_enabled = False
         self.right_arm_enabled = False
+        self.arms_control_enabled = False
 
         # Initialize private member objects
         self._log = None
         self._parameters = None
         self._left_arm = None
         self._right_arm = None
+        self._arms_controller = None
+        self._movement_timer = None
 
         # Initialize private parameters
+        self._time_threshold = 0.1
+        self._open_direction = 1.0
+        self._close_direction = -1.0
+        self._open_speed_ratio = 1.0
+        self._close_speed_ratio = 1.0
 
         # Initialize private member variables
         self._log_enabled = False
@@ -110,11 +131,55 @@ class Feeder(object):
             else:
                 self._log = None
 
+        self._movement_timer = stopwatch.Stopwatch()
+
         # Read parameters file
         self._parameters_file = params
         self.load_parameters()
 
-        # Create the motor controller objects if the channels are greater than 0
+    def load_parameters(self):
+        """Load values from a parameter file and create and initialize objects.
+
+        Read parameter values from the specified file, instantiate required
+        objects, and update status variables.
+
+        Returns:
+            True if the parameter file was processed successfully.
+
+        """
+        # Define and initialize local variables
+        motor_channel = -1
+
+        # Close and delete old objects
+        self._parameters = None
+        self._arms_controller = None
+
+        # Read the parameters file
+        self._parameters = parameters.Parameters(self._parameters_file)
+        section = __name__.lower()
+
+        # Store parameters from the file to local variables
+        if self._parameters:
+            motor_channel = self._parameters.get_value(section,
+                                            "MOTOR_CHANNEL")
+            self._time_threshold = self._parameters.get_value(section,
+                                            "TIME_THRESHOLD")
+            self._open_direction = self._parameters.get_value(section,
+                                            "OPEN_DIRECTION")
+            self._close_direction = self._parameters.get_value(
+                                            section,
+                                            "CLOSE_DIRECTION")
+            self._open_speed_ratio = self._parameters.get_value(section,
+                                            "OPEN_SPEED_RATIO")
+            self._close_speed_ratio = self._parameters.get_value(
+                                            section,
+                                            "CLOSE_SPEED_RATIO")
+
+        # Create motor controllers
+        if motor_channel >= 0:
+            self._arms_controller = wpilib.Talon(motor_channel)
+            self.arms_control_enabled = True
+
         self.right_arm_enabled = False
         self.left_arm_enabled = False
         self._right_arm = feeder_arm.FeederArm("/home/lvuser/par/right_arm.par",
@@ -136,17 +201,11 @@ class Feeder(object):
                 self._log.debug("Feeder enabled")
             else:
                 self._log.debug("Feeder disabled")
+            if self.arms_control_enabled:
+                self._log.debug("Arms control enabled")
+            else:
+                self._log.debug("Arms control disabled")
 
-    def load_parameters(self):
-        """Load values from a parameter file and create and initialize objects.
-
-        Read parameter values from the specified file, instantiate required
-        objects, and update status variables.
-
-        Returns:
-            True if the parameter file was processed successfully.
-
-        """
         return True
 
     def set_robot_state(self, state):
@@ -245,3 +304,62 @@ class Feeder(object):
 
         return False
 
+    def move_arms(self, direction, speed):
+        """Move the feeder arms.
+
+        Args:
+            direction: Direction enumeration of open, close, stop.
+            speed: The speed that the arms move.
+
+        """
+        if self.arms_control_enabled:
+            if direction == common.Direction.OPEN:
+                self._arms_controller.set((self._open_direction * speed *
+                    self._open_speed_ratio), 0)
+            elif direction == common.Direction.CLOSE:
+                self._arms_controller.set((self._close_direction * speed *
+                    self._close_speed_ratio), 0)
+            elif direction == common.Direction.STOP:
+                self._arms_controller.set(0.0, 0)
+
+    def arms_time(self, time, direction, speed):
+        """Controls the arms for a time duration.
+
+        Using a timer, moves the arms for a certain time duration.
+
+        Args:
+            time: the amount of time to move.
+            direction: the direction to move.
+            speed: the motor speed ratio.
+
+        Returns:
+            True when the time duration has been reached.
+        """
+        # Abort if arm controller or timer is not available
+        if not self.arms_control_enabled or not self._movement_timer:
+            return True
+
+        # Get the timer value since we started moving
+        elapsed_time = self._movement_timer.elapsed_time_in_secs()
+
+        # Calculate time left
+        time_left = time - elapsed_time
+
+        # Check if we've moved long enough
+        if time_left < self._time_threshold or time_left < 0:
+            self._arms_controller.set(0.0, 0)
+            self._movement_timer.stop()
+            return True
+        else:
+            if direction == common.Direction.OPEN:
+                self._arms_controller.set((self._open_direction * speed *
+                                            self._open_speed_ratio), 0)
+            elif direction == common.Direction.CLOSE:
+                self._arms_controller.set((self._close_direction * speed *
+                                           self._close_speed_ratio), 0)
+            else:
+                self._arms_controller.set(0.0, 0)
+                self._movement_timer.stop()
+                return True
+
+        return False
