@@ -251,22 +251,23 @@ class MyRobot(wpilib.IterativeRobot):
             if scoring_left_y != 0.0:
                 direction = common.Direction.STOP
                 if scoring_left_y > 0:
-                    direction = common.Direction.IN
+                    direction = common.Direction.OPEN
                 else:
-                    direction = common.Direction.OUT
-                self._feeder.feed(direction, math.fabs(scoring_left_y))
+                    direction = common.Direction.CLOSE
+                self._feeder.move_arms(direction, math.fabs(scoring_left_y))
             else:
-                self._feeder.feed(common.Direction.STOP, 0.0)
+                self._feeder.move_arms(common.Direction.STOP, 0.0)
 
             if scoring_dpad_y != 0.0:
                 direction = common.Direction.STOP
                 if scoring_dpad_y > 0:
-                    direction = common.Direction.OPEN
+                    direction = common.Direction.IN
                 else:
-                    direction = common.Direction.CLOSE
-                self._feeder.move_arms(direction, math.fabs(scoring_dpad_y))
+                    direction = common.Direction.OUT
+                self._feeder.feed(direction, math.fabs(scoring_dpad_y))
             else:
-                self._feeder.move_arms(common.Direction.STOP, 0.0)
+                self._feeder.feed(common.Direction.STOP, 0.0)
+
 
     def _control_lift(self):
         """Manually control the lift."""
