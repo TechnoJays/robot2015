@@ -234,37 +234,41 @@ class MyRobot(wpilib.IterativeRobot):
                     userinterface.UserControllers.DRIVER,
                     userinterface.JoystickAxis.RIGHTX)
             if driver_right_y != 0.0 or driver_right_x != 0.0:
-                self._drive_train.drive(driver_right_y, driver_right_x, False)
+                self._drive_train.drive(driver_right_y, driver_right_x,
+                                        self._driver_alternate)
             else:
                 self._drive_train.drive(0.0, 0.0, False)
 
     def _control_feeder(self):
         """Manually control the feeder."""
         if self._feeder:
-            scoring_left_y = self._user_interface.get_axis_value(
+            scoring_right_x = self._user_interface.get_axis_value(
                     userinterface.UserControllers.SCORING,
-                    userinterface.JoystickAxis.LEFTY)
-            scoring_dpad_y = self._user_interface.get_axis_value(
+                    userinterface.JoystickAxis.RIGHTX)
+            scoring_left_trigger = self._user_interface.get_button_state(
                     userinterface.UserControllers.SCORING,
-                    userinterface.JoystickAxis.DPADY)
+                    userinterface.JoystickButtons.LEFTTRIGGER)
+            scoring_right_trigger = self._user_interface.get_button_state(
+                    userinterface.UserControllers.SCORING,
+                    userinterface.JoystickButtons.RIGHTTRIGGER)
 
-            if scoring_left_y != 0.0:
+            if scoring_right_x != 0.0:
                 direction = common.Direction.STOP
-                if scoring_left_y > 0:
+                if scoring_right_x > 0:
                     direction = common.Direction.OPEN
                 else:
                     direction = common.Direction.CLOSE
-                self._feeder.move_arms(direction, math.fabs(scoring_left_y))
+                self._feeder.move_arms(direction, math.fabs(scoring_right_x))
             else:
                 self._feeder.move_arms(common.Direction.STOP, 0.0)
 
-            if scoring_dpad_y != 0.0:
+            if scoring_left_trigger != 0.0 or scoring_right_trigger != 0.0:
                 direction = common.Direction.STOP
-                if scoring_dpad_y > 0:
+                if scoring_right_trigger > 0:
                     direction = common.Direction.IN
                 else:
                     direction = common.Direction.OUT
-                self._feeder.feed(direction, math.fabs(scoring_dpad_y))
+                self._feeder.feed(direction, 1.0)
             else:
                 self._feeder.feed(common.Direction.STOP, 0.0)
 
@@ -272,11 +276,11 @@ class MyRobot(wpilib.IterativeRobot):
     def _control_lift(self):
         """Manually control the lift."""
         if self._lift:
-            scoring_right_y = self._user_interface.get_axis_value(
+            scoring_left_y = self._user_interface.get_axis_value(
                     userinterface.UserControllers.SCORING,
-                    userinterface.JoystickAxis.RIGHTY)
-            if scoring_right_y != 0.0:
-                self._lift.move_lift(scoring_right_y)
+                    userinterface.JoystickAxis.LEFTY)
+            if scoring_left_y != 0.0:
+                self._lift.move_lift(scoring_left_y)
             else:
                 self._lift.move_lift(0.0)
 
