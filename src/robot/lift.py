@@ -230,10 +230,10 @@ class Lift(object):
         # Create the encoder object if the channel is valid
         self.encoder_enabled = False
         if encoder_a_channel >= 0 and encoder_b_channel >= 0:
-            self._encoder = wpilib.Encoder(encoder_a_channel,
-                                           encoder_b_channel,
-                                           encoder_reverse,
-                                           encoder_type)
+            self._encoder = wpilib.Encoder(aChannel=int(encoder_a_channel),
+                                           bChannel=int(encoder_b_channel),
+                                           reverseDirection=bool(encoder_reverse),
+                                           encodingType=int(encoder_type))
             if self._encoder:
                 self.encoder_enabled = True
 
