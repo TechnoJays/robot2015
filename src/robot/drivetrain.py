@@ -662,22 +662,22 @@ class DriveTrain(object):
         # This is used to prevent tipping or jerky movement and may not be
         # necessary depending on the robot design.
         # Method 1: using a maximum amount of change per robot iterative cycle
-        #if (math.fabs(linear - self._previous_linear_speed) >
-        #        self._maximum_linear_speed_change):
-        #    if (linear - self._previous_linear_speed) < 0:
-        #        linear = (self._previous_linear_speed -
-        #                self._maximum_linear_speed_change)
-        #    else:
-        #        linear = (self._previous_linear_speed +
-        #                self._maximum_linear_speed_change)
-        #if (math.fabs(turn - self._previous_turn_speed) >
-        #        self._maximum_turn_speed_change):
-        #    if (turn - self._previous_turn_speed) < 0:
-        #        turn = (self._previous_turn_speed -
-        #                self._maximum_turn_speed_change)
-        #    else:
-        #        turn = (self._previous_turn_speed +
-        #                self._maximum_turn_speed_change)
+        if (math.fabs(linear - self._previous_linear_speed) >
+                self._maximum_linear_speed_change):
+            if (linear - self._previous_linear_speed) < 0:
+                linear = (self._previous_linear_speed -
+                        self._maximum_linear_speed_change)
+            else:
+                linear = (self._previous_linear_speed +
+                        self._maximum_linear_speed_change)
+        if (math.fabs(turn - self._previous_turn_speed) >
+                self._maximum_turn_speed_change):
+            if (turn - self._previous_turn_speed) < 0:
+                turn = (self._previous_turn_speed -
+                        self._maximum_turn_speed_change)
+            else:
+                turn = (self._previous_turn_speed +
+                        self._maximum_turn_speed_change)
 
         # Method 2: using a simple low pass filter
         # new speed = target speed - K * (target speed - current speed)
@@ -688,8 +688,8 @@ class DriveTrain(object):
         #       (turn - self._previous_turn_speed))
 
         self._robot_drive.arcadeDrive(linear, turn, False)
-        #self._previous_linear_speed = linear
-        #self._previous_turn_speed = turn
+        self._previous_linear_speed = linear
+        self._previous_turn_speed = turn
 
     def tank_drive(self, left_stick, right_stick, alternate):
         """Drives the robot using left and right 'tank track' controls.
