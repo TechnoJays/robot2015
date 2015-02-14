@@ -247,6 +247,16 @@ class Feeder(object):
         """Reset sensors."""
         pass
 
+    def reset_and_start_timer(self):
+        """Resets and restarts the timer for time based movement."""
+        if self._movement_timer:
+            self._movement_timer.stop()
+            self._movement_timer.start()
+        if self._right_arm:
+            self._right_arm.reset_and_start_timer()
+        if self._left_arm:
+            self._left_arm.reset_and_start_timer()
+
     def get_current_state(self):
         """Return a string containing sensor and status variables.
 
