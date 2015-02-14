@@ -2,7 +2,6 @@
 
 # Imports
 import wpilib
-#import autoscript
 import autoscript
 import common
 import drivetrain
@@ -27,12 +26,12 @@ class MyRobot(wpilib.IterativeRobot):
     _feeder = None
     _lift = None
     _log = None
+    _autonomous_chooser = None
     _user_interface = None
 
     # Private member variables
     _log_enabled = False
     _driver_alternate = False
-    _autoscript_file_counter = 0
     _autoscript_filename = None
     _autoscript_files = None
     _autoscript_finished = False
@@ -72,9 +71,12 @@ class MyRobot(wpilib.IterativeRobot):
             self._autoscript_files = self._autoscript.get_available_scripts(
                                                             "/home/lvuser/as/")
             if self._autoscript_files and len(self._autoscript_files) > 0:
-                self._autoscript_file_counter = 0
-                self._autoscript_filename = self._autoscript_files[
-                                                self._autoscript_file_counter]
+                # Create autonomous selection chooser
+                if (not self._autonomous_chooser or
+                    self._autonomous_chooser.getSelected() is None):
+                    for script_name in self._autoscript_files:
+                        self._autonomous_chooser.addObject(script_name,
+                                                           script_name)
 
     def autonomousInit(self):
         """Prepares the robot for Autonomous mode.
@@ -87,8 +89,10 @@ class MyRobot(wpilib.IterativeRobot):
         # Read sensors
         self._read_sensors()
 
-        if self._autoscript and self._autoscript_filename:
-            self._autoscript.parse(self._autoscript_filename)
+        if self._autoscript:
+            self._autoscript_filename = self._autonomous_chooser.getSelected()
+            if self._autoscript_filename:
+                self._autoscript.parse(self._autoscript_filename)
 
         self._autoscript_finished = False
         self._current_command = None
@@ -254,12 +258,12 @@ class MyRobot(wpilib.IterativeRobot):
         self._feeder = None
         self._lift = None
         self._log = None
+        self._autonomous_chooser = None
         self._user_interface = None
 
         # Initialize private member variables
         self._log_enabled = False
         self._driver_alternate = False
-        self._autoscript_file_counter = 0
         self._autoscript_filename = None
         self._autoscript_files = None
         self._autoscript_finished = False
@@ -290,6 +294,7 @@ class MyRobot(wpilib.IterativeRobot):
                 self._log = None
 
         # Create robot objects
+        self._autonomous_chooser = wpilib.SendableChooser()
         self._autoscript = autoscript.AutoScript()
         self._drive_train = drivetrain.DriveTrain(
                                     "/home/lvuser/par/drivetrain.par",
