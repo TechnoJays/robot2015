@@ -432,6 +432,7 @@ class DriveTrain(object):
 
         if self.gyro_enabled:
             self._gyro_angle = self._gyro.getAngle()
+            wpilib.SmartDashboard.putNumber("Gyro", self._gyro_angle)
 
         if self.accelerometer_enabled:
             self._acceleration = self._accelerometer.getY()

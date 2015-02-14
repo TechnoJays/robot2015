@@ -293,6 +293,7 @@ class Lift(object):
         """Read and store current sensor values."""
         if self.encoder_enabled:
             self._encoder_count = self._encoder.get()
+            wpilib.SmartDashboard.putNumber("Lift Encoder", self._encoder_count)
 
     def reset_sensors(self):
         """Reset sensor values."""
