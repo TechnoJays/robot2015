@@ -3,6 +3,7 @@
 # Imports
 import wpilib
 #import autoscript
+import autoscript
 import common
 import drivetrain
 import feeder
@@ -329,8 +330,8 @@ class MyRobot(wpilib.IterativeRobot):
                     calling_object = self._drive_train
                 elif name in self._feeder_names:
                     calling_object = self._feeder
-                elif name in self._shooter_names:
-                    calling_object = self._shooter
+                elif name in self._lift_names:
+                    calling_object = self._lift
                 elif name in self._user_interface_names:
                     calling_object = self._user_interface
         else:
