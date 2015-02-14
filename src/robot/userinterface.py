@@ -12,26 +12,26 @@ import parameters
 
 class JoystickAxis(object):
     """Enumerates joystick axis."""
-    LEFTX = 1
-    LEFTY = 2
-    RIGHTX = 3
-    RIGHTY = 4
+    LEFTX = 0
+    LEFTY = 1
+    RIGHTX = 2
+    RIGHTY = 3
     DPADX = 5
     DPADY = 6
 
 
 class JoystickButtons(object):
     """Enumerates joystick buttons."""
-    X = 1
-    A = 2
-    B = 3
-    Y = 4
-    LEFTBUMPER = 5
-    RIGHTBUMPER = 6
-    LEFTTRIGGER = 7
-    RIGHTTRIGGER = 8
-    BACK = 9
-    START = 10
+    X = 0
+    A = 1
+    B = 2
+    Y = 3
+    LEFTBUMPER = 4
+    RIGHTBUMPER = 5
+    LEFTTRIGGER = 6
+    RIGHTTRIGGER = 7
+    BACK = 8
+    START = 9
 
 
 class UserControllers(object):
@@ -164,32 +164,26 @@ class UserInterface(object):
         self._controller_2_previous_button_state = []
 
         # Read the parameters file
-        param_reader = parameters.Parameters(self._parameters_file)
+        self._parameters = parameters.Parameters(self._parameters_file)
 
-        if self._log_enabled:
-            if param_reader is not None:
-                self._log.debug("Robot parameters loaded successfully")
-            else:
-                self._log.debug("Failed to read Robot parameters")
-
-        if param_reader is not None:
-            controller_1_port = param_reader.get_value(section,
+        if self._parameters is not None:
+            controller_1_port = self._parameters.get_value(section,
                                                        "CONTROLLER_1_PORT")
-            controller_2_port = param_reader.get_value(section,
+            controller_2_port = self._parameters.get_value(section,
                                                        "CONTROLLER_2_PORT")
-            controller_1_axis = param_reader.get_value(section,
+            controller_1_axis = self._parameters.get_value(section,
                                                        "CONTROLLER_1_AXIS")
-            controller_2_axis = param_reader.get_value(section,
+            controller_2_axis = self._parameters.get_value(section,
                                                        "CONTROLLER_2_AXIS")
 
-            self._controller_1_buttons = param_reader.get_value(section,
+            self._controller_1_buttons = self._parameters.get_value(section,
                                                         "CONTROLLER1_BUTTONS")
-            self._controller_2_buttons = param_reader.get_value(section,
+            self._controller_2_buttons = self._parameters.get_value(section,
                                                         "CONTROLLER2_BUTTONS")
 
-            self._controller_1_dead_band = param_reader.get_value(section,
+            self._controller_1_dead_band = self._parameters.get_value(section,
                                                       "CONTROLLER1_DEAD_BAND")
-            self._controller_2_dead_band = param_reader.get_value(section,
+            self._controller_2_dead_band = self._parameters.get_value(section,
                                                       "CONTROLLER2_DEAD_BAND")
             # Initialize previous button state lists
             self._controller_1_previous_button_state = ([0] *
@@ -205,7 +199,17 @@ class UserInterface(object):
                                                  controller_2_axis,
                                                  self._controller_2_buttons)
 
-        return self._parameters
+        if self._log_enabled:
+            if self._controller_1 is not None:
+                self._log.debug("Controller 1 created")
+            else:
+                self._log.debug("Controller 1 not created")
+            if self._controller_2 is not None:
+                self._log.debug("Controller 2 created")
+            else:
+                self._log.debug("Controller 2 not created")
+
+
 
     def set_robot_state(self, state):
         """Set the current state of the robot and perform any actions
@@ -270,13 +274,47 @@ class UserInterface(object):
 
         if controller == UserControllers.DRIVER:
             if self._controller_1:
-                value = self._controller_1.getRawAxis(axis)
+                if axis == JoystickAxis.DPADX:
+                    value = self._controller_1.getPOV()
+                    if value == 90:
+                        value = 1.0
+                    elif value == 270:
+                        value = -1.0
+                    else:
+                        value = 0.0
+                elif axis == JoystickAxis.DPADY:
+                    value = self._controller_1.getPOV()
+                    if value == 0:
+                        value = -1.0
+                    elif value == 180:
+                        value = 1.0
+                    else:
+                        value = 0.0
+                else:
+                    value = self._controller_1.getRawAxis(axis)
                 if abs(value) < self._controller_1_dead_band:
                     return 0.0
                 return value
         elif controller == UserControllers.SCORING:
             if self._controller_2:
-                value = self._controller_2.getRawAxis(axis)
+                if axis == JoystickAxis.DPADX:
+                    value = self._controller_2.getPOV()
+                    if value == 90:
+                        value = 1.0
+                    elif value == 270:
+                        value = -1.0
+                    else:
+                        value = 0.0
+                elif axis == JoystickAxis.DPADY:
+                    value = self._controller_2.getPOV()
+                    if value == 0:
+                        value = -1.0
+                    elif value == 180:
+                        value = 1.0
+                    else:
+                        value = 0.0
+                else:
+                    value = self._controller_2.getRawAxis(axis)
                 if abs(value) < self._controller_2_dead_band:
                     return 0.0
                 return value
