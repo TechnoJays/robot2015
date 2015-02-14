@@ -279,6 +279,15 @@ class MyRobot(wpilib.IterativeRobot):
             scoring_left_y = self._user_interface.get_axis_value(
                     userinterface.UserControllers.SCORING,
                     userinterface.JoystickAxis.LEFTY)
+            scoring_left_bumper = self._user_interface.get_button_state(
+                    userinterface.UserControllers.SCORING,
+                    userinterface.JoystickButtons.LEFTBUMPER)
+
+            if scoring_left_bumper != 0.0:
+                self._lift.ignore_encoder_limits(True)
+            else:
+                self._lift.ignore_encoder_limits(False)
+
             if scoring_left_y != 0.0:
                 self._lift.move_lift(scoring_left_y)
             else:
