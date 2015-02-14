@@ -1,0 +1,9 @@
+arms_time,0.3,13,1.0
+feed_time,0.3,8,1.0
+lift_time,1.0,5,1.0
+turn_time,0.5,2,0.8
+drive_time,2.0,3,1.0
+arms_time,0.5,12,1.0
+lift_time,1.0,6,1.0
+drive_time,0.5,4,1.0
+end
