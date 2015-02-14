@@ -22,16 +22,16 @@ class JoystickAxis(object):
 
 class JoystickButtons(object):
     """Enumerates joystick buttons."""
-    #X = 0 ??
-    #A = 1 ??
-    #B = 2 ??
-    #Y = 3 ??
-    LEFTBUMPER = 4 #??
-    #RIGHTBUMPER = 5 ??
-    RIGHTTRIGGER = 5
-    LEFTTRIGGER = 6
-    #BACK = 8 ??
-    #START = 9 ??
+    X = 1
+    A = 2
+    B = 3
+    Y = 4
+    LEFTBUMPER = 5
+    RIGHTBUMPER = 6
+    LEFTTRIGGER = 7
+    RIGHTTRIGGER = 8
+    BACK = 9
+    START = 10
 
 class UserControllers(object):
     """Enumerates the controllers."""
