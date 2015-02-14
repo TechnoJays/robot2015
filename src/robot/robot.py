@@ -21,6 +21,7 @@ class MyRobot(wpilib.IterativeRobot):
     # Public member variables
 
     # Private member objects
+    _autoscript = None
     _drive_train = None
     _feeder = None
     _lift = None
@@ -30,7 +31,19 @@ class MyRobot(wpilib.IterativeRobot):
     # Private member variables
     _log_enabled = False
     _driver_alternate = False
-
+    _autoscript_file_counter = 0
+    _autoscript_filename = None
+    _autoscript_files = None
+    _autoscript_finished = False
+    _current_command = None
+    _current_command_complete = False
+    _autoscript_owner = None
+    _autoscript_method = None
+    _robot_names = None
+    _drive_train_names = None
+    _feeder_names = None
+    _lift_names = None
+    _user_interface_names = None
 
     # Iterative robot methods that we override.
     # These get called by the main control loop in the IterativeRobot class.
@@ -53,6 +66,15 @@ class MyRobot(wpilib.IterativeRobot):
         # Read sensors
         self._read_sensors()
 
+        # Get the list of autoscript files/routines
+        if self._autoscript:
+            self._autoscript_files = self._autoscript.get_available_scripts(
+                                                            "/home/lvuser/as/")
+            if self._autoscript_files and len(self._autoscript_files) > 0:
+                self._autoscript_file_counter = 0
+                self._autoscript_filename = self._autoscript_files[
+                                                self._autoscript_file_counter]
+
     def autonomousInit(self):
         """Prepares the robot for Autonomous mode.
 
@@ -63,6 +85,18 @@ class MyRobot(wpilib.IterativeRobot):
 
         # Read sensors
         self._read_sensors()
+
+        if self._autoscript and self._autoscript_filename:
+            self._autoscript.parse(self._autoscript_filename)
+
+        self._autoscript_finished = False
+        self._current_command = None
+        self._autoscript_owner = None
+        self._autoscript_method = None
+        # Initially true to get 1st command
+        self._current_command_complete = True
+        if not self._autoscript or not self._autoscript_filename:
+            self._autoscript_finished = True
 
     def teleopInit(self):
         """Prepares the robot for Teleop mode.
@@ -106,6 +140,62 @@ class MyRobot(wpilib.IterativeRobot):
         """
         # Read sensors
         self._read_sensors()
+
+        if not self._autoscript_finished:
+            # Handle the command
+            # If we found the method, unpack the parameters List
+            # (using *) and call it
+            if not self._current_command_complete:
+                try:
+                    self._current_command_complete = \
+                            self._autoscript_method(
+                                    *self._current_command.parameters)
+                except TypeError:
+                    #self._logger.warn("TypeError running autoscript"
+                    #            " command: " + str(current_command.command))
+                    self._current_command_complete = True
+
+            # Move on to the next command when the current is finished
+            if self._current_command_complete:
+                # Get next command
+                self._current_command_complete = False
+                self._current_command = self._autoscript.get_next_command()
+
+                # If it's None or invalid or end, we're finished
+                if (not self._current_command or
+                    self._current_command.command == "invalid" or
+                    self._current_command.command == "end"):
+                    self._autoscript_finished = True
+                else:
+                    # Try to get the method reference using its name
+                    self._autoscript_owner, self._autoscript_method = \
+                            self._get_method(self._current_command.command)
+                    if not self._autoscript_method:
+                        self._current_command_complete = True
+                    # Check if method has '_time' in it
+                    elif '_time' in self._current_command.command:
+                        # We need to reset its internal timer first
+                        reset = None
+                        self._autoscript_owner, reset = self._get_method(
+                                                'reset_and_start_timer',
+                                                obj=self._autoscript_owner)
+                        if reset:
+                            try:
+                                reset()
+                            except TypeError:
+                                #self._logger.warn("TypeError running "
+                                #                  "autoscript timer reset")
+                                self._current_command_complete = True
+                        else:
+                            self._current_command_complete = True
+
+        # Autoscript is finished
+        else:
+            # Set all motors to inactive
+            if self._drive_train:
+                self._drive_train.drive(0.0, 0.0, False)
+            if self._feeder:
+                self._feeder.feed(common.Direction.STOP, 0.0)
 
     def teleopPeriodic(self):
         """Called iteratively during teleop mode.
@@ -158,6 +248,7 @@ class MyRobot(wpilib.IterativeRobot):
         # Initialize public member variables
 
         # Initialize private member objects
+        self._autoscript = None
         self._drive_train = None
         self._feeder = None
         self._lift = None
@@ -167,6 +258,19 @@ class MyRobot(wpilib.IterativeRobot):
         # Initialize private member variables
         self._log_enabled = False
         self._driver_alternate = False
+        self._autoscript_file_counter = 0
+        self._autoscript_filename = None
+        self._autoscript_files = None
+        self._autoscript_finished = False
+        self._current_command = None
+        self._current_command_complete = False
+        self._autoscript_owner = None
+        self._autoscript_method = None
+        self._robot_names = None
+        self._drive_train_names = None
+        self._feeder_names = None
+        self._lift_names = None
+        self._user_interface_names = None
 
         # Enable logging if specified
         if logging_enabled:
@@ -185,6 +289,7 @@ class MyRobot(wpilib.IterativeRobot):
                 self._log = None
 
         # Create robot objects
+        self._autoscript = autoscript.AutoScript()
         self._drive_train = drivetrain.DriveTrain(
                                     "/home/lvuser/par/drivetrain.par",
                                     self._log_enabled)
@@ -194,6 +299,55 @@ class MyRobot(wpilib.IterativeRobot):
         self._user_interface = userinterface.UserInterface(
                                     "/home/lvuser/par/userinterface.par",
                                     self._log_enabled)
+
+        # Store the attributes/names in each object
+        self._robot_names = dir(self)
+        self._drive_train_names = dir(self._drive_train)
+        self._feeder_names = dir(self._feeder)
+        self._lift_names = dir(self._lift)
+        self._user_interface_names = dir(self._user_interface)
+
+    def _get_method(self, name, obj=None):
+        """Find the matching method in one of the objects.
+
+        Args:
+            name: the name of the method.
+
+        Returns:
+            Object, Method.
+
+        """
+        calling_object = None
+        method = None
+
+        # Determine which object contains the method
+        if not obj:
+            if name:
+                if name in self._robot_names:
+                    calling_object = self
+                elif name in self._drive_train_names:
+                    calling_object = self._drive_train
+                elif name in self._feeder_names:
+                    calling_object = self._feeder
+                elif name in self._shooter_names:
+                    calling_object = self._shooter
+                elif name in self._user_interface_names:
+                    calling_object = self._user_interface
+        else:
+            calling_object = obj
+
+        # Get the method pointer (sort of) from the object
+        if calling_object:
+            try:
+                method = getattr(calling_object, name)
+                # Make sure method is callable
+                if method and not callable(method):
+                    method = None
+            except AttributeError:
+                #self._logger.warn("AttributeError getting method pointer")
+                pass
+
+        return calling_object, method
 
     def _read_sensors(self):
         """Have the objects read their sensors."""
