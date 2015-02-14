@@ -227,14 +227,14 @@ class MyRobot(wpilib.IterativeRobot):
     def _control_drive_train(self):
         """Manually control the drive train."""
         if self._drive_train:
-            driver_left_y = self._user_interface.get_axis_value(
+            driver_right_y = self._user_interface.get_axis_value(
                     userinterface.UserControllers.DRIVER,
-                    userinterface.JoystickAxis.LEFTY)
+                    userinterface.JoystickAxis.RIGHTY)
             driver_right_x = self._user_interface.get_axis_value(
                     userinterface.UserControllers.DRIVER,
                     userinterface.JoystickAxis.RIGHTX)
-            if driver_left_y != 0.0 or driver_right_x != 0.0:
-                self._drive_train.drive(driver_left_y, driver_right_x, False)
+            if driver_right_y != 0.0 or driver_right_x != 0.0:
+                self._drive_train.drive(driver_right_y, driver_right_x, False)
             else:
                 self._drive_train.drive(0.0, 0.0, False)
 
