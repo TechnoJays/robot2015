@@ -199,12 +199,14 @@ class MyRobot(wpilib.IterativeRobot):
                                     "/home/lvuser/par/userinterface.par",
                                     self._log_enabled)
 
-        # Start USB camera feed back to smartdashboard
+        # Start USB camera feedback to smartdashboard
         try:
             self._camera = wpilib.USBCamera()
-            self._camera.startCapture()
-            self._camera_server = wpilib.CameraServer()
-            self._camera_server.startAutomaticCapture(self._camera)
+            if self._camera:
+                self._camera.startCapture()
+                self._camera_server = wpilib.CameraServer()
+                if self._camera_server:
+                    self._camera_server.startAutomaticCapture(self._camera)
         except:
             self._camera = None
             self._camera_server = None
