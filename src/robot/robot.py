@@ -21,6 +21,8 @@ class MyRobot(wpilib.IterativeRobot):
     # Public member variables
 
     # Private member objects
+    _camera = None
+    _camera_server = None
     _drive_train = None
     _feeder = None
     _lift = None
@@ -158,6 +160,8 @@ class MyRobot(wpilib.IterativeRobot):
         # Initialize public member variables
 
         # Initialize private member objects
+        self._camera = None
+        self._camera_server = None
         self._drive_train = None
         self._feeder = None
         self._lift = None
@@ -194,6 +198,18 @@ class MyRobot(wpilib.IterativeRobot):
         self._user_interface = userinterface.UserInterface(
                                     "/home/lvuser/par/userinterface.par",
                                     self._log_enabled)
+
+        # Start USB camera feedback to smartdashboard
+        try:
+            self._camera = wpilib.USBCamera()
+            if self._camera:
+                self._camera.startCapture()
+                self._camera_server = wpilib.CameraServer()
+                if self._camera_server:
+                    self._camera_server.startAutomaticCapture(self._camera)
+        except:
+            self._camera = None
+            self._camera_server = None
 
     def _read_sensors(self):
         """Have the objects read their sensors."""
