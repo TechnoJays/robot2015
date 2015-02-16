@@ -162,7 +162,7 @@ class FeederArm(object):
 
         # Create motor controllers
         if motor_channel >= 0:
-            self._wheel_controller = wpilib.Talon(motor_channel)
+            self._wheel_controller = wpilib.Victor(motor_channel)
             self.arm_enabled = True
 
         if self._log_enabled:
