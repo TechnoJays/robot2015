@@ -33,7 +33,6 @@ class MyRobot(wpilib.IterativeRobot):
     _log_enabled = False
     _driver_alternate = False
     _autoscript_filename = None
-    _autoscript_files = None
     _autoscript_finished = False
     _current_command = None
     _current_command_complete = False
@@ -68,13 +67,13 @@ class MyRobot(wpilib.IterativeRobot):
 
         # Get the list of autoscript files/routines
         if self._autoscript:
-            self._autoscript_files = self._autoscript.get_available_scripts(
+            # Create autonomous selection chooser
+            if (not self._autonomous_chooser or
+                self._autonomous_chooser.getSelected() is None):
+                autoscript_files = self._autoscript.get_available_scripts(
                                                             "/home/lvuser/as/")
-            if self._autoscript_files and len(self._autoscript_files) > 0:
-                # Create autonomous selection chooser
-                if (not self._autonomous_chooser or
-                    self._autonomous_chooser.getSelected() is None):
-                    for script_name in self._autoscript_files:
+                if autoscript_files and len(autoscript_files) > 0:
+                    for script_name in autoscript_files:
                         self._autonomous_chooser.addObject(script_name,
                                                            script_name)
 
@@ -201,6 +200,8 @@ class MyRobot(wpilib.IterativeRobot):
                 self._drive_train.drive(0.0, 0.0, False)
             if self._feeder:
                 self._feeder.feed(common.Direction.STOP, 0.0)
+            if self._lift:
+                self._lift.move_lift(0.0)
 
     def teleopPeriodic(self):
         """Called iteratively during teleop mode.
@@ -265,7 +266,6 @@ class MyRobot(wpilib.IterativeRobot):
         self._log_enabled = False
         self._driver_alternate = False
         self._autoscript_filename = None
-        self._autoscript_files = None
         self._autoscript_finished = False
         self._current_command = None
         self._current_command_complete = False
