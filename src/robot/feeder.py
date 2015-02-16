@@ -310,6 +310,12 @@ class Feeder(object):
         elif direction == common.Direction.OUT:
             right_direction = common.Direction.CLOCKWISE
             left_direction = common.Direction.COUNTERCLOCKWISE
+        elif direction == common.Direction.CLOCKWISE:
+            right_direction = common.Direction.CLOCKWISE
+            left_direction = common.Direction.CLOCKWISE
+        elif direction == common.Direction.COUNTERCLOCKWISE:
+            right_direction = common.Direction.COUNTERCLOCKWISE
+            left_direction = common.Direction.COUNTERCLOCKWISE
         elif direction == common.Direction.STOP:
             right_direction = common.Direction.STOP
             left_direction = common.Direction.STOP
