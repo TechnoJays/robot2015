@@ -427,6 +427,12 @@ class MyRobot(wpilib.IterativeRobot):
             scoring_right_trigger = self._user_interface.get_button_state(
                     userinterface.UserControllers.SCORING,
                     userinterface.JoystickButtons.RIGHTTRIGGER)
+            scoring_left_bumper = self._user_interface.get_button_state(
+                    userinterface.UserControllers.SCORING,
+                    userinterface.JoystickButtons.LEFTBUMPER)
+            scoring_right_bumper = self._user_interface.get_button_state(
+                    userinterface.UserControllers.SCORING,
+                    userinterface.JoystickButtons.RIGHTBUMPER)
 
             if scoring_right_x != 0.0:
                 direction = common.Direction.STOP
@@ -438,12 +444,17 @@ class MyRobot(wpilib.IterativeRobot):
             else:
                 self._feeder.move_arms(common.Direction.STOP, 0.0)
 
-            if scoring_left_trigger != 0.0 or scoring_right_trigger != 0.0:
+            if (scoring_left_trigger != 0.0 or scoring_right_trigger != 0.0 or
+                scoring_left_bumper != 0.0 or scoring_right_bumper != 0.0):
                 direction = common.Direction.STOP
-                if scoring_right_trigger > 0:
+                if scoring_right_trigger != 0.0:
                     direction = common.Direction.IN
-                else:
+                elif scoring_left_trigger != 0.0:
                     direction = common.Direction.OUT
+                elif scoring_left_bumper != 0.0:
+                    direction = common.Direction.CLOCKWISE
+                elif scoring_right_bumper != 0.0:
+                    direction = common.Direction.COUNTERCLOCKWISE
                 self._feeder.feed(direction, 1.0)
             else:
                 self._feeder.feed(common.Direction.STOP, 0.0)
