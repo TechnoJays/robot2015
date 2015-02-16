@@ -284,6 +284,12 @@ class Feeder(object):
             elif direction == common.Direction.OUT:
                 self._right_arm.spin(common.Direction.CLOCKWISE, speed)
                 self._left_arm.spin(common.Direction.COUNTERCLOCKWISE, speed)
+            elif direction == common.Direction.CLOCKWISE:
+                self._right_arm.spin(common.Direction.CLOCKWISE, speed)
+                self._left_arm.spin(common.Direction.CLOCKWISE, speed)
+            elif direction == common.Direction.COUNTERCLOCKWISE:
+                self._right_arm.spin(common.Direction.COUNTERCLOCKWISE, speed)
+                self._left_arm.spin(common.Direction.COUNTERCLOCKWISE, speed)
             elif direction == common.Direction.STOP:
                 self._right_arm.spin(common.Direction.STOP, 0)
                 self._left_arm.spin(common.Direction.STOP, 0)
@@ -313,6 +319,12 @@ class Feeder(object):
             left_direction = common.Direction.CLOCKWISE
         elif direction == common.Direction.OUT:
             right_direction = common.Direction.CLOCKWISE
+            left_direction = common.Direction.COUNTERCLOCKWISE
+        elif direction == common.Direction.CLOCKWISE:
+            right_direction = common.Direction.CLOCKWISE
+            left_direction = common.Direction.CLOCKWISE
+        elif direction == common.Direction.COUNTERCLOCKWISE:
+            right_direction = common.Direction.COUNTERCLOCKWISE
             left_direction = common.Direction.COUNTERCLOCKWISE
         elif direction == common.Direction.STOP:
             right_direction = common.Direction.STOP
