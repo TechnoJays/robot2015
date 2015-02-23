@@ -22,8 +22,6 @@ class MyRobot(wpilib.IterativeRobot):
 
     # Private member objects
     _autoscript = None
-    _camera = None
-    _camera_server = None
     _drive_train = None
     _feeder = None
     _lift = None
@@ -257,8 +255,6 @@ class MyRobot(wpilib.IterativeRobot):
 
         # Initialize private member objects
         self._autoscript = None
-        self._camera = None
-        self._camera_server = None
         self._drive_train = None
         self._feeder = None
         self._lift = None
@@ -309,18 +305,6 @@ class MyRobot(wpilib.IterativeRobot):
         self._user_interface = userinterface.UserInterface(
                                     "/home/lvuser/par/userinterface.par",
                                     self._log_enabled)
-
-        # Start USB camera feedback to smartdashboard
-        try:
-            self._camera = wpilib.USBCamera()
-            if self._camera:
-                self._camera.startCapture()
-                self._camera_server = wpilib.CameraServer()
-                if self._camera_server:
-                    self._camera_server.startAutomaticCapture(self._camera)
-        except:
-            self._camera = None
-            self._camera_server = None
 
         # Store the attributes/names in each object
         self._robot_names = dir(self)
