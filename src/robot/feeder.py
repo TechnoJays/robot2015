@@ -6,6 +6,7 @@ import common
 import feeder_arm
 import logging
 import logging.config
+import math
 import parameters
 import stopwatch
 
@@ -18,6 +19,7 @@ class Feeder(object):
 
     Attributes:
         feeder_enabled: True if the feeder is fully functional (default False).
+        encoder_enabled: true if the feeder encoder is present and initialized.
         left_arm_enabled: True if the left arm is functional (default False).
         right_arm_enabled: True if the right arm is functional (default False).
 
@@ -27,6 +29,7 @@ class Feeder(object):
     left_arm_enabled = False
     right_arm_enabled = False
     arms_control_enabled = False
+    encoder_enabled = False
 
     # Private member objects
     _log = None
@@ -34,9 +37,13 @@ class Feeder(object):
     _left_arm = None
     _right_arm = None
     _arms_controller = None
+    _encoder = None
     _movement_timer = None
 
     # Private parameters
+    _encoder_threshold = None
+    _encoder_max_limit = None
+    _encoder_min_limit = None
     _time_threshold = 0
     _open_direction = None
     _close_direction = None
@@ -44,8 +51,10 @@ class Feeder(object):
     _close_speed_ratio = None
 
     # Private member variables
+    _encoder_count = None
     _log_enabled = False
     _parameters_file = None
+    _ignore_encoder_limits = None
     _robot_state = common.ProgramState.DISABLED
 
     def __init__(self, params="/home/lvuser/par/feeder.par",
@@ -73,6 +82,7 @@ class Feeder(object):
         self._parameters = None
         self._left_arm = None
         self._right_arm = None
+        self._encoder = None
         self._arms_controller = None
         self._movement_timer = None
 
@@ -93,16 +103,21 @@ class Feeder(object):
         self.left_arm_enabled = False
         self.right_arm_enabled = False
         self.arms_control_enabled = False
+        self.encoder_enabled = False
 
         # Initialize private member objects
         self._log = None
         self._parameters = None
         self._left_arm = None
         self._right_arm = None
+        self._encoder = None
         self._arms_controller = None
         self._movement_timer = None
 
         # Initialize private parameters
+        self._encoder_threshold = 10
+        self._encoder_max_limit = 10000
+        self._encoder_min_limit = 0
         self._time_threshold = 0.1
         self._open_direction = 1.0
         self._close_direction = -1.0
@@ -110,6 +125,8 @@ class Feeder(object):
         self._close_speed_ratio = 1.0
 
         # Initialize private member variables
+        self._encoder_count = 0
+        self._ignore_encoder_limits = False
         self._log_enabled = False
         self._robot_state = common.ProgramState.DISABLED
         self._parameters_file = None
@@ -149,9 +166,14 @@ class Feeder(object):
         """
         # Define and initialize local variables
         motor_channel = -1
+        encoder_a_channel = -1
+        encoder_b_channel = -1
+        encoder_reverse = 0
+        encoder_type = 2
 
         # Close and delete old objects
         self._parameters = None
+        self._encoder = None
         self._arms_controller = None
 
         # Read the parameters file
@@ -162,6 +184,20 @@ class Feeder(object):
         if self._parameters:
             motor_channel = self._parameters.get_value(section,
                                             "MOTOR_CHANNEL")
+            encoder_a_channel = self._parameters.get_value(section,
+                                                "ENCODER_A_CHANNEL")
+            encoder_b_channel = self._parameters.get_value(section,
+                                                "ENCODER_B_CHANNEL")
+            encoder_reverse = self._parameters.get_value(section,
+                                                "ENCODER_REVERSE")
+            encoder_type = self._parameters.get_value(section,
+                                                "ENCODER_TYPE")
+            self._encoder_threshold = self._parameters.get_value(section,
+                                            "ENCODER_THRESHOLD")
+            self._encoder_max_limit = self._parameters.get_value(section,
+                                                "ENCODER_MAX_LIMIT")
+            self._encoder_min_limit = self._parameters.get_value(section,
+                                                "ENCODER_MIN_LIMIT")
             self._time_threshold = self._parameters.get_value(section,
                                             "TIME_THRESHOLD")
             self._open_direction = self._parameters.get_value(section,
@@ -174,6 +210,16 @@ class Feeder(object):
             self._close_speed_ratio = self._parameters.get_value(
                                             section,
                                             "CLOSE_SPEED_RATIO")
+
+        # Create the encoder object if the channel is valid
+        self.encoder_enabled = False
+        if encoder_a_channel >= 0 and encoder_b_channel >= 0:
+            self._encoder = wpilib.Encoder(aChannel=int(encoder_a_channel),
+                                           bChannel=int(encoder_b_channel),
+                                           reverseDirection=bool(encoder_reverse),
+                                           encodingType=int(encoder_type))
+            if self._encoder:
+                self.encoder_enabled = True
 
         # Create motor controllers
         if motor_channel >= 0:
@@ -205,6 +251,10 @@ class Feeder(object):
                 self._log.debug("Arms control enabled")
             else:
                 self._log.debug("Arms control disabled")
+            if self.encoder_enabled:
+                self._log.debug("Encoder enabled")
+            else:
+                self._log.debug("Encoder disabled")
 
         return True
 
@@ -241,11 +291,16 @@ class Feeder(object):
 
     def read_sensors(self):
         """Read and store current sensor values."""
-        pass
+        if self.encoder_enabled:
+            self._encoder_count = self._encoder.get()
+            wpilib.SmartDashboard.putNumber("Feeder Encoder",
+                                            self._encoder_count)
 
     def reset_sensors(self):
         """Reset sensors."""
-        pass
+        if self.encoder_enabled:
+            self._encoder.reset()
+            self._encoder_count = self._encoder.get()
 
     def reset_and_start_timer(self):
         """Resets and restarts the timer for time based movement."""
@@ -261,13 +316,15 @@ class Feeder(object):
         """Return a string containing sensor and status variables.
 
         Returns:
-            ''
+            A string with the encoder value.
         """
-        return ''
+        return 'Encoder: %(enc)3.0f' % {'enc':self._encoder_count}
 
     def log_current_state(self):
         """Log sensor and status variables."""
-        pass
+        if self._log:
+            if self.encoder_enabled:
+                self._log.debug("Encoder: " + str(self._encoder_count))
 
     def feed(self, direction, speed):
         """Use the arms to feed an object into the robot.
@@ -338,6 +395,54 @@ class Feeder(object):
 
         return False
 
+    def set_arms_position(self, position, speed):
+        """Sets the arms to a specified position.
+
+        Args:
+            position: The desired position in encoder counts.
+            speed: The motor speed ratio.
+
+        Returns:
+            True when the desired position is reached.
+
+        """
+        # Abort if we don't have the encoder or motors
+        if not self.encoder_enabled or not self.arms_control_enabled:
+            return True
+
+        movement_direction = 0.0
+
+        # Check the encoder position against the boundaries (if enabled)
+        # Check max boundary
+        if (not self._ignore_encoder_limits and self._encoder_max_limit > 0 and
+            position > self._encoder_count and
+            self._encoder_count > self._encoder_max_limit):
+            self._arms_controller.set(0, 0)
+            return True
+        # Check min boundary
+        if (not self._ignore_encoder_limits and position < self._encoder_count
+            and self._encoder_count < self._encoder_min_limit):
+            self._arms_controller.set(0, 0)
+            return True
+
+        # Check to see if we've reached the correct position
+        if math.fabs(position - self._encoder_count) <= self._encoder_threshold:
+            self._arms_controller.set(0, 0)
+            return True
+
+        # Continue moving
+        # Assume starting position (0) is with arms all the way open
+        # If the starting position is closed, this needs to be reversed!
+        if (position - self._encoder_count) < 0:
+            direction = (self._open_direction * self._open_speed_ratio)
+        else:
+            direction = (self._close_direction * self._close_speed_ratio)
+
+        movement_direction = (direction * speed)
+
+        self._arms_controller.set(movement_direction, 0)
+        return False
+
     def move_arms(self, direction, speed):
         """Move the feeder arms.
 
@@ -346,15 +451,34 @@ class Feeder(object):
             speed: The speed that the arms move.
 
         """
-        if self.arms_control_enabled:
-            if direction == common.Direction.OPEN:
-                self._arms_controller.set((self._open_direction * speed *
-                    self._open_speed_ratio), 0)
-            elif direction == common.Direction.CLOSE:
-                self._arms_controller.set((self._close_direction * speed *
-                    self._close_speed_ratio), 0)
-            elif direction == common.Direction.STOP:
-                self._arms_controller.set(0.0, 0)
+        if not self.arms_control_enabled:
+            return
+
+        # Check the encoder position against the boundaries (if enabled)
+        # Assume starting position (0) is with arms all the way open
+        # If the starting position is closed, this needs to be reversed!
+        if self.encoder_enabled:
+            # Check max boundary
+            if (not self._ignore_encoder_limits and self._encoder_max_limit > 0
+                and direction == common.Direction.CLOSE and
+                self._encoder_count > self._encoder_max_limit):
+                self._arms_controller.set(0, 0)
+                return True
+            # Check min boundary
+            if (not self._ignore_encoder_limits and self._encoder_min_limit > 0
+                and direction == common.Direction.OPEN and
+                self._encoder_count < self._encoder_min_limit):
+                self._arms_controller.set(0, 0)
+                return True
+
+        if direction == common.Direction.OPEN:
+            self._arms_controller.set((self._open_direction * speed *
+                self._open_speed_ratio), 0)
+        elif direction == common.Direction.CLOSE:
+            self._arms_controller.set((self._close_direction * speed *
+                self._close_speed_ratio), 0)
+        elif direction == common.Direction.STOP:
+            self._arms_controller.set(0.0, 0)
 
     def arms_time(self, time, direction, speed):
         """Controls the arms for a time duration.
@@ -379,6 +503,23 @@ class Feeder(object):
         # Calculate time left
         time_left = time - elapsed_time
 
+        # Check the encoder position against the boundaries (if enabled)
+        # Assume starting position (0) is with arms all the way open
+        # If the starting position is closed, this needs to be reversed!
+        if self.encoder_enabled:
+            # Check max boundary
+            if (not self._ignore_encoder_limits and self._encoder_max_limit > 0
+                and direction == common.Direction.CLOSE and
+                self._encoder_count > self._encoder_max_limit):
+                self._arms_controller.set(0, 0)
+                return True
+            # Check min boundary
+            if (not self._ignore_encoder_limits and self._encoder_min_limit > 0
+                and direction == common.Direction.OPEN and
+                self._encoder_count < self._encoder_min_limit):
+                self._arms_controller.set(0, 0)
+                return True
+
         # Check if we've moved long enough
         if time_left < self._time_threshold or time_left < 0:
             self._arms_controller.set(0.0, 0)
@@ -397,3 +538,12 @@ class Feeder(object):
                 return True
 
         return False
+
+    def ignore_encoder_limits(self, state):
+        """Notify arms to ignore encoder limits.
+
+        Args:
+            state: True if limits should be ignored.
+
+        """
+        self._ignore_encoder_limits = state
