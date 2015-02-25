@@ -1,0 +1,9 @@
+set_arms_position,2500,1.0
+feed_time,0.3,8,1.0
+set_lift_position,2000,1.0
+adjust_heading,90,0.8
+drive_time,3.0,3,1.0
+set_arms_position,500,1.0
+set_lift_position,0,1.0
+drive_time,0.5,4,1.0
+end

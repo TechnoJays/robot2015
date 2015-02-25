@@ -43,6 +43,8 @@ class MyRobot(wpilib.IterativeRobot):
     _feeder_names = None
     _lift_names = None
     _user_interface_names = None
+    _auto_selection_setup = False
+    _scoring_ignore_limits = False
 
     # Iterative robot methods that we override.
     # These get called by the main control loop in the IterativeRobot class.
@@ -66,16 +68,16 @@ class MyRobot(wpilib.IterativeRobot):
         self._read_sensors()
 
         # Get the list of autoscript files/routines
-        if self._autoscript:
+        if self._autoscript and not self._auto_selection_setup:
+            self._auto_selection_setup = True
             # Create autonomous selection chooser
-            if (not self._autonomous_chooser or
-                self._autonomous_chooser.getSelected() is None):
-                autoscript_files = self._autoscript.get_available_scripts(
-                                                            "/home/lvuser/as/")
-                if autoscript_files and len(autoscript_files) > 0:
-                    for script_name in autoscript_files:
-                        self._autonomous_chooser.addObject(script_name,
-                                                           script_name)
+            autoscript_files = self._autoscript.get_available_scripts(
+                                                        "/home/lvuser/as/")
+            if autoscript_files and len(autoscript_files) > 0:
+                for script_name in autoscript_files:
+                    self._autonomous_chooser.addObject(script_name, script_name)
+                wpilib.SmartDashboard.putData("Auto Program",
+                                              self._autonomous_chooser)
 
     def autonomousInit(self):
         """Prepares the robot for Autonomous mode.
@@ -276,6 +278,8 @@ class MyRobot(wpilib.IterativeRobot):
         self._feeder_names = None
         self._lift_names = None
         self._user_interface_names = None
+        self._auto_selection_setup = False
+        self._scoring_ignore_limits = False
 
         # Enable logging if specified
         if logging_enabled:
@@ -450,14 +454,17 @@ class MyRobot(wpilib.IterativeRobot):
             scoring_left_y = self._user_interface.get_axis_value(
                     userinterface.UserControllers.SCORING,
                     userinterface.JoystickAxis.LEFTY)
-            scoring_left_bumper = self._user_interface.get_button_state(
+            scoring_y_button_value = self._user_interface.get_button_state(
                     userinterface.UserControllers.SCORING,
-                    userinterface.JoystickButtons.LEFTBUMPER)
+                    userinterface.JoystickButtons.Y)
+            scoring_y_button_chg = self._user_interface.button_state_changed(
+                    userinterface.UserControllers.SCORING,
+                    userinterface.JoystickButtons.Y)
 
-            if scoring_left_bumper != 0.0:
-                self._lift.ignore_encoder_limits(True)
-            else:
-                self._lift.ignore_encoder_limits(False)
+            if scoring_y_button_value != 0.0 and scoring_y_button_chg:
+                self._scoring_ignore_limits = not self._scoring_ignore_limits
+                self._lift.ignore_encoder_limits(self._scoring_ignore_limits)
+                self._feeder.ignore_encoder_limits(self._scoring_ignore_limits)
 
             if scoring_left_y != 0.0:
                 self._lift.move_lift(scoring_left_y)
