@@ -74,8 +74,10 @@ class MyRobot(wpilib.IterativeRobot):
             autoscript_files = self._autoscript.get_available_scripts(
                                                         "/home/lvuser/as/")
             if autoscript_files and len(autoscript_files) > 0:
-                for script_name in autoscript_files:
-                    self._autonomous_chooser.addObject(script_name, script_name)
+                for script_path in autoscript_files:
+                    script_name = script_path.replace("/home/lvuser/as/", "")
+                    script_name = script_name.replace(".as", "")
+                    self._autonomous_chooser.addObject(script_name, script_path)
                 wpilib.SmartDashboard.putData("Auto Program",
                                               self._autonomous_chooser)
 
