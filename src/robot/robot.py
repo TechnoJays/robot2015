@@ -133,6 +133,11 @@ class MyRobot(wpilib.IterativeRobot):
         # Set all motors to be stopped (prevent motor safety errors)
         if self._drive_train:
             self._drive_train.drive(0.0, 0.0, False)
+        if self._lift:
+            self._lift.move_lift(0.0)
+        if self._feeder:
+            self._feeder.feed(common.Direction.STOP, 0.0)
+            self._feeder.move_arms(common.Direction.STOP, 0.0)
 
         # Read sensors
         self._read_sensors()
@@ -202,6 +207,7 @@ class MyRobot(wpilib.IterativeRobot):
                 self._drive_train.drive(0.0, 0.0, False)
             if self._feeder:
                 self._feeder.feed(common.Direction.STOP, 0.0)
+                self._feeder.move_arms(common.Direction.STOP, 0.0)
             if self._lift:
                 self._lift.move_lift(0.0)
 
