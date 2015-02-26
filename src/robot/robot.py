@@ -10,6 +10,7 @@ import lift
 import logging
 import logging.config
 import math
+import parameters
 import userinterface
 
 
@@ -26,11 +27,18 @@ class MyRobot(wpilib.IterativeRobot):
     _feeder = None
     _lift = None
     _log = None
+    _parameters = None
     _autonomous_chooser = None
     _user_interface = None
 
+    # Private parameters
+    _tote_1_position = None
+    _tote_2_position = None
+    _bin_arms_position = None
+
     # Private member variables
     _log_enabled = False
+    _parameters_file = None
     _driver_alternate = False
     _autoscript_filename = None
     _autoscript_finished = False
@@ -45,6 +53,9 @@ class MyRobot(wpilib.IterativeRobot):
     _user_interface_names = None
     _auto_selection_setup = False
     _scoring_ignore_limits = False
+    _semi_auto_tote_1 = False
+    _semi_auto_tote_2 = False
+    _semi_auto_arms_bin = False
 
     # Iterative robot methods that we override.
     # These get called by the main control loop in the IterativeRobot class.
@@ -269,8 +280,14 @@ class MyRobot(wpilib.IterativeRobot):
         self._feeder = None
         self._lift = None
         self._log = None
+        self._parameters = None
         self._autonomous_chooser = None
         self._user_interface = None
+
+        # Initialize private parameters
+        self._tote_1_position = 0
+        self._tote_2_position = 0
+        self._bin_arms_position = 0
 
         # Initialize private member variables
         self._log_enabled = False
@@ -288,6 +305,9 @@ class MyRobot(wpilib.IterativeRobot):
         self._user_interface_names = None
         self._auto_selection_setup = False
         self._scoring_ignore_limits = False
+        self._semi_auto_tote_1 = False
+        self._semi_auto_tote_2 = False
+        self._semi_auto_arms_bin = False
 
         # Enable logging if specified
         if logging_enabled:
@@ -304,6 +324,10 @@ class MyRobot(wpilib.IterativeRobot):
                 self._log_enabled = True
             else:
                 self._log = None
+
+        # Read parameters file
+        self._parameters_file = params
+        self.load_parameters()
 
         # Create robot objects
         self._autonomous_chooser = wpilib.SendableChooser()
@@ -324,6 +348,36 @@ class MyRobot(wpilib.IterativeRobot):
         self._feeder_names = dir(self._feeder)
         self._lift_names = dir(self._lift)
         self._user_interface_names = dir(self._user_interface)
+
+    def load_parameters(self):
+        """Load values from a parameter file.
+
+        Read parameter values from the specified file, instantiate required
+        objects, and update status variables.
+
+        Returns:
+            True if the parameter file was processed successfully.
+
+        """
+        # Define and initialize local variables
+
+        # Close and delete old objects
+        self._parameters = None
+
+        # Read the parameters file
+        self._parameters = parameters.Parameters(self._parameters_file)
+        section = "robot"
+
+        # Store parameters from the file to local variables
+        if self._parameters:
+            self._tote_1_position = self._parameters.get_value(section,
+                                            "TOTE_1_POSITION")
+            self._tote_2_position = self._parameters.get_value(section,
+                                            "TOTE_2_POSITION")
+            self._bin_arms_position = self._parameters.get_value(section,
+                                            "BIN_ARMS_POSITION")
+
+        return True
 
     def _get_method(self, name, obj=None):
         """Find the matching method in one of the objects.
@@ -430,6 +484,7 @@ class MyRobot(wpilib.IterativeRobot):
                     userinterface.UserControllers.SCORING,
                     userinterface.JoystickButtons.RIGHTBUMPER)
 
+            # Perform any manual control of arms, and clear semi-auto flags
             if scoring_right_x != 0.0:
                 direction = common.Direction.STOP
                 if scoring_right_x > 0:
@@ -437,9 +492,28 @@ class MyRobot(wpilib.IterativeRobot):
                 else:
                     direction = common.Direction.CLOSE
                 self._feeder.move_arms(direction, math.fabs(scoring_right_x))
+                self._semi_auto_arms_bin = False
             else:
-                self._feeder.move_arms(common.Direction.STOP, 0.0)
+                # Read semi-auto buttons
+                scoring_x_btn_value = self._user_interface.get_button_state(
+                        userinterface.UserControllers.SCORING,
+                        userinterface.JoystickButtons.X)
+                scoring_x_btn_chg = self._user_interface.button_state_changed(
+                        userinterface.UserControllers.SCORING,
+                        userinterface.JoystickButtons.X)
+                # Check for semi-auto arm requests
+                if scoring_x_btn_value != 0.0 and scoring_x_btn_chg:
+                    self._semi_auto_arms_bin = True
+                # Check if arm semi-auto is requested/running
+                if self._semi_auto_arms_bin:
+                    self._semi_auto_arms_bin = not \
+                            self._feeder.set_arms_position(
+                                    self._bin_arms_position, 1.0)
+                # No manual arm control or semi-auto
+                else:
+                    self._feeder.move_arms(common.Direction.STOP, 0.0)
 
+            # Control feeding in/out/etc
             if (scoring_left_trigger != 0.0 or scoring_right_trigger != 0.0 or
                 scoring_left_bumper != 0.0 or scoring_right_bumper != 0.0):
                 direction = common.Direction.STOP
@@ -455,29 +529,64 @@ class MyRobot(wpilib.IterativeRobot):
             else:
                 self._feeder.feed(common.Direction.STOP, 0.0)
 
-
     def _control_lift(self):
         """Manually control the lift."""
         if self._lift:
             scoring_left_y = self._user_interface.get_axis_value(
                     userinterface.UserControllers.SCORING,
                     userinterface.JoystickAxis.LEFTY)
-            scoring_y_button_value = self._user_interface.get_button_state(
+            scoring_y_btn_value = self._user_interface.get_button_state(
                     userinterface.UserControllers.SCORING,
                     userinterface.JoystickButtons.Y)
-            scoring_y_button_chg = self._user_interface.button_state_changed(
+            scoring_y_btn_chg = self._user_interface.button_state_changed(
                     userinterface.UserControllers.SCORING,
                     userinterface.JoystickButtons.Y)
 
-            if scoring_y_button_value != 0.0 and scoring_y_button_chg:
+            # Check the Y button to see if ignore encoders should be toggled
+            if scoring_y_btn_value != 0.0 and scoring_y_btn_chg:
                 self._scoring_ignore_limits = not self._scoring_ignore_limits
                 self._lift.ignore_encoder_limits(self._scoring_ignore_limits)
                 self._feeder.ignore_encoder_limits(self._scoring_ignore_limits)
 
+            # Perform any manual control, and clear semi-auto flags
             if scoring_left_y != 0.0:
                 self._lift.move_lift(scoring_left_y)
+                self._semi_auto_tote_1 = False
+                self._semi_auto_tote_2 = False
             else:
-                self._lift.move_lift(0.0)
+                # Read semi-auto buttons
+                scoring_a_btn_value = self._user_interface.get_button_state(
+                        userinterface.UserControllers.SCORING,
+                        userinterface.JoystickButtons.A)
+                scoring_a_btn_chg = self._user_interface.button_state_changed(
+                        userinterface.UserControllers.SCORING,
+                        userinterface.JoystickButtons.A)
+                scoring_b_btn_value = self._user_interface.get_button_state(
+                        userinterface.UserControllers.SCORING,
+                        userinterface.JoystickButtons.B)
+                scoring_b_btn_chg = self._user_interface.button_state_changed(
+                        userinterface.UserControllers.SCORING,
+                        userinterface.JoystickButtons.B)
+                # Check for semi-auto requests
+                if scoring_a_btn_value != 0.0 and scoring_a_btn_chg:
+                    self._semi_auto_tote_1 = True
+                    self._semi_auto_tote_2 = False
+                if scoring_b_btn_value != 0.0 and scoring_b_btn_chg:
+                    self._semi_auto_tote_1 = False
+                    self._semi_auto_tote_2 = True
+                # Check if either semi-auto is requested/running
+                if self._semi_auto_tote_1 or self._semi_auto_tote_2:
+                    if self._semi_auto_tote_1:
+                        self._semi_auto_tote_1 = not \
+                                self._lift.set_lift_position(
+                                        self._tote_1_position, 1.0)
+                    else:
+                        self._semi_auto_tote_2 = not \
+                                self._lift.set_lift_position(
+                                        self._tote_2_position, 1.0)
+                # No manual control or semi-auto
+                else:
+                    self._lift.move_lift(0.0)
 
 if __name__ == "__main__":
     wpilib.run(MyRobot)
